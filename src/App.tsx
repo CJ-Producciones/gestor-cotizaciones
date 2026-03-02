@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
+import { SpeedInsights } from "@vercel/speed-insights/react";
 import Layaut from "./layaut";
 import Login from "./pages/Login";
 import Index from "./pages/Index";
@@ -55,6 +56,7 @@ const App = () => (
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>
+          <SpeedInsights />
         </TooltipProvider>
       </AuthProvider>
     </ThemeProvider>
