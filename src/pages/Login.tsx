@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
+import { resetPassword } from "@/api/auth/resetPassword";
 
 const Login = () => {
   const [email, setEmail] = useState("");
@@ -15,8 +16,34 @@ const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [hasError, setHasError] = useState(false);
+  const [showForgot, setShowForgot] = useState(false);
+  const [forgotEmail, setForgotEmail] = useState("");
+  const [isSendingReset, setIsSendingReset] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
+
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!forgotEmail) {
+      toast.error("Ingresá tu correo");
+      return;
+    }
+    setIsSendingReset(true);
+    try {
+      const { error } = await resetPassword(forgotEmail);
+      if (error) {
+        toast.error(error.message);
+        return;
+      }
+      toast.success("Te enviamos un email para restablecer tu contraseña");
+      setShowForgot(false);
+      setForgotEmail("");
+    } catch {
+      toast.error("Error al enviar el email");
+    } finally {
+      setIsSendingReset(false);
+    }
+  };
 
   const triggerShake = () => {
     setHasError(true);
@@ -137,6 +164,52 @@ const Login = () => {
               )}
             </Button>
           </form>
+
+          <div className="animate-in fade-in duration-500 delay-700">
+            <button
+              type="button"
+              onClick={() => setShowForgot(!showForgot)}
+              className="w-full text-sm text-muted-foreground hover:text-primary transition-colors text-center"
+            >
+              ¿Olvidaste tu contraseña?
+            </button>
+
+            {showForgot && (
+              <form
+                onSubmit={handleForgotPassword}
+                className="mt-4 space-y-3 animate-in fade-in slide-in-from-top-2 duration-300"
+              >
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-foreground flex items-center gap-2">
+                    <Mail className="h-4 w-4 text-primary" />
+                    Tu correo electrónico
+                  </label>
+                  <Input
+                    type="email"
+                    placeholder="tu@email.com"
+                    value={forgotEmail}
+                    onChange={(e) => setForgotEmail(e.target.value)}
+                    disabled={isSendingReset}
+                  />
+                </div>
+                <Button
+                  type="submit"
+                  variant="outline"
+                  className="w-full"
+                  disabled={isSendingReset}
+                >
+                  {isSendingReset ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Enviando...
+                    </>
+                  ) : (
+                    "Enviar email de restablecimiento"
+                  )}
+                </Button>
+              </form>
+            )}
+          </div>
         </CardContent>
       </Card>
     </div>
