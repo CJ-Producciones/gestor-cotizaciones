@@ -19,7 +19,8 @@ import NotFound from "./pages/NotFound";
 import Configuracion from "./pages/Configuracion";
 import ConfiguracionPerfil from "./pages/configuracion/Perfil";
 import ConfiguracionUsuarios from "./pages/configuracion/Usuarios";
-import ConfiguracionInvitaciones from "./pages/configuracion/Invitaciones";
+import ResetPassword from "./pages/ResetPassword";
+import AcceptInvite from "./pages/AcceptInvite";
 
 const queryClient = new QueryClient();
 
@@ -33,6 +34,8 @@ const App = () => (
           <BrowserRouter>
             <Routes>
               <Route path="/login" element={<Login />} />
+              <Route path="/reset-password" element={<ResetPassword />} />
+              <Route path="/accept-invite" element={<AcceptInvite />} />
               <Route
                 element={
                   <ProtectedRoute>
@@ -48,7 +51,6 @@ const App = () => (
                   <Route index element={<Navigate to="/configuracion/perfil" replace />} />
                   <Route path="perfil" element={<ConfiguracionPerfil />} />
                   <Route path="usuarios" element={<ConfiguracionUsuarios />} />
-                  <Route path="invitaciones" element={<ConfiguracionInvitaciones />} />
                   <Route path="productos" element={<Productos />} />
                   <Route path="servicios" element={<Servicios />} />
                 </Route>
