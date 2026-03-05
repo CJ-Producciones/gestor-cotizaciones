@@ -1,5 +1,5 @@
 import { Sidebar, SidebarContent, SidebarInset, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarHeader, useSidebar } from "@/components/ui/sidebar"
-import { Search, Settings, User } from "lucide-react"
+import { Settings, User } from "lucide-react"
 import { useAuth } from "@/contexts/AuthContext"
 import { roles } from "@/utils/const"
 import { NavLink } from "react-router-dom"
@@ -16,14 +16,14 @@ const ConfigItems: SidebarItem[] = [
   {
     title: "Usuarios",
     icon: User,
-    role: [roles.ADMIN, roles.EDITOR, roles.EMPLEADO],
+    role: [roles.ADMIN, roles.EMPLEADO],
     type: "group"
   },
   {
     title: "Perfil",
     url: "/configuracion/perfil",
     icon: User,
-    role: [roles.ADMIN, roles.EDITOR, roles.EMPLEADO],
+    role: [roles.ADMIN, roles.EMPLEADO],
     type: "content"
   },
   {
@@ -34,30 +34,23 @@ const ConfigItems: SidebarItem[] = [
     type: "content"
   },
   {
-    title: "Invitaciones",
-    url: "/configuracion/invitaciones",
-    icon: Search,
-    role: [roles.ADMIN],
-    type: "content"
-  },
-  {
     title: "Configuración",
     icon: Settings,
-    role: [roles.ADMIN, roles.EDITOR],
+    role: [roles.ADMIN],
     type: "group"
   },
   {
     title: "Productos",
     url: "/configuracion/productos",
     icon: Settings,
-    role: [roles.ADMIN, roles.EDITOR],
+    role: [roles.ADMIN],
     type: "content"
   },
   {
     title: "Servicios",
     url: "/configuracion/servicios",
     icon: Settings,
-    role: [roles.ADMIN, roles.EDITOR],
+    role: [roles.ADMIN],
     type: "content"
   }
 ]
