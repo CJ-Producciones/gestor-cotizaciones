@@ -147,9 +147,13 @@ export default function ConfiguracionUsuarios() {
       return;
     }
 
-    const yaInvitado = invitations.some((inv) => inv.email.toLowerCase() === inviteEmail.toLowerCase());
-    if (yaInvitado) {
-      toast.error("Lo sentimos, ya enviaste una invitación a este correo");
+    const yaInvitadoPendiente = invitations.some((inv) => {
+      const isAccepted = !!inv.accepted_at;
+      const isExpired = new Date(inv.expires_at) < new Date();
+      return !isAccepted && !isExpired && inv.email.toLowerCase() === inviteEmail.toLowerCase();
+    });
+    if (yaInvitadoPendiente) {
+      toast.error("Ya hay una invitación pendiente para este correo. Usá el botón de reenviar.");
       return;
     }
 
@@ -157,7 +161,12 @@ export default function ConfiguracionUsuarios() {
     try {
       const { error } = await inviteUser(inviteEmail, inviteRole);
       if (error) {
-        toast.error("Lo sentimos, ya enviaste una invitación a este correo");
+        const msg = typeof error === "string" ? error : "";
+        if (msg.includes("cuenta activa")) {
+          toast.error("Este correo ya tiene una cuenta activa en el sistema");
+        } else {
+          toast.error("No se pudo enviar la invitación");
+        }
         return;
       }
       toast.success("Invitación enviada");
