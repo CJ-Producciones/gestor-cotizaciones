@@ -136,7 +136,7 @@ SaaS_Cotizaciones/
 
 ```bash
 git clone <url-del-repositorio>
-cd SaaS_Cotizaciones
+cd gestor-cotizaciones
 pnpm install
 ```
 
