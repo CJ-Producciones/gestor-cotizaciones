@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Loader2, Pencil, Trash2, Plus, Briefcase } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -72,6 +72,9 @@ const Servicios = () => {
   const [descripcion, setDescripcion] = useState("");
   const [estado, setEstado] = useState("activo");
 
+  const scrollTopRef = useRef<HTMLDivElement>(null);
+  const scrollTableRef = useRef<HTMLDivElement>(null);
+
   const [dialogEditarAbierto, setDialogEditarAbierto] = useState(false);
   const [servicioEditando, setServicioEditando] = useState<Servicio | null>(null);
 
@@ -98,6 +101,20 @@ const Servicios = () => {
 
   useEffect(() => {
     cargarServicios();
+  }, []);
+
+  useEffect(() => {
+    const top = scrollTopRef.current;
+    const table = scrollTableRef.current;
+    if (!top || !table) return;
+    const syncFromTop = () => { table.scrollLeft = top.scrollLeft; };
+    const syncFromTable = () => { top.scrollLeft = table.scrollLeft; };
+    top.addEventListener("scroll", syncFromTop);
+    table.addEventListener("scroll", syncFromTable);
+    return () => {
+      top.removeEventListener("scroll", syncFromTop);
+      table.removeEventListener("scroll", syncFromTable);
+    };
   }, []);
 
   const limpiarFormulario = () => {
@@ -265,7 +282,15 @@ const Servicios = () => {
 
         {/* ── Table panel ─────────────────────────────────────────── */}
         <div className="md:col-span-2 rounded-xl border bg-card overflow-hidden">
-          <div className="overflow-auto max-h-[calc(100vh-280px)]">
+          {/* Mirror horizontal scrollbar — top */}
+          <div
+            ref={scrollTopRef}
+            className="overflow-x-auto overflow-y-hidden border-b border-border"
+            style={{ height: 13 }}
+          >
+            <div style={{ minWidth: 560, height: 1 }} />
+          </div>
+          <div ref={scrollTableRef} className="overflow-auto max-h-[calc(100vh-293px)]">
             <Table className="min-w-[560px]">
               <TableHeader className="sticky top-0 z-10">
                 <TableRow className="hover:bg-transparent border-b">
