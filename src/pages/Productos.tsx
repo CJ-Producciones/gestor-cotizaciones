@@ -121,6 +121,7 @@ const Productos = () => {
     cargarDatos();
   }, []);
 
+
   const limpiarFormulario = () => {
     setIdServicio("");
     setNombre("");
@@ -259,7 +260,7 @@ const Productos = () => {
       )}
 
       {/* ── Two-column layout ─────────────────────────────────────── */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-5 md:h-[calc(100vh-60px)]">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-5 md:h-[calc(100vh-50px)]">
 
         {/* ── Create form ─────────────────────────────────────────── */}
         <div className="md:col-span-1 rounded-xl border bg-card overflow-hidden flex flex-col">
@@ -360,7 +361,7 @@ const Productos = () => {
         {/* ── Table panel ─────────────────────────────────────────── */}
         <div className="md:col-span-2 rounded-xl border bg-card overflow-hidden flex flex-col">
           <div className="overflow-auto flex-1 min-h-0">
-            <Table className="min-w-[700px]">
+            <Table>
               <TableHeader className="sticky top-0 z-10">
                 <TableRow className="hover:bg-transparent border-b">
                   <TableHead className="pl-4 text-xs uppercase tracking-wider text-muted-foreground font-medium bg-card">
@@ -373,9 +374,6 @@ const Productos = () => {
                     Precio
                   </TableHead>
                   <TableHead className="text-xs uppercase tracking-wider text-muted-foreground font-medium bg-card">
-                    Estado
-                  </TableHead>
-                  <TableHead className="text-xs uppercase tracking-wider text-muted-foreground font-medium bg-card">
                     Creado
                   </TableHead>
                   <TableHead className="w-16 bg-card" />
@@ -385,7 +383,7 @@ const Productos = () => {
               <TableBody>
                 {cargando ? (
                   <TableRow>
-                    <TableCell colSpan={6} className="h-32 text-center">
+                    <TableCell colSpan={5} className="h-32 text-center">
                       <span className="inline-flex items-center gap-2 text-sm text-muted-foreground">
                         <Loader2 className="h-4 w-4 animate-spin" />
                         Cargando productos…
@@ -394,13 +392,13 @@ const Productos = () => {
                   </TableRow>
                 ) : error ? (
                   <TableRow>
-                    <TableCell colSpan={6} className="h-32 text-center text-sm text-destructive">
+                    <TableCell colSpan={5} className="h-32 text-center text-sm text-destructive">
                       {error}
                     </TableCell>
                   </TableRow>
                 ) : productos.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={6} className="h-32 text-center text-sm text-muted-foreground">
+                    <TableCell colSpan={5} className="h-32 text-center text-sm text-muted-foreground">
                       No hay productos registrados
                     </TableCell>
                   </TableRow>
@@ -433,9 +431,6 @@ const Productos = () => {
                         <span className="text-sm font-medium tabular-nums text-foreground">
                           {formatCurrency(producto.precio)}
                         </span>
-                      </TableCell>
-                      <TableCell>
-                        <EstadoBadge estado={producto.estado} />
                       </TableCell>
                       <TableCell>
                         <span className="text-sm tabular-nums text-muted-foreground">
