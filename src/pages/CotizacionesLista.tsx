@@ -26,7 +26,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { CotizacionesService } from "@/services/cotizacionesService";
-import { Cotizacion } from "@/types/cotizacion";
+import { Cotizacion, DatosCotizacion } from "@/types/cotizacion";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import {
@@ -38,6 +38,8 @@ import {
   SlidersHorizontal,
   ChevronLeft,
   ChevronRight,
+  Copy,
+  ArrowLeft,
 } from "lucide-react";
 import { roles } from "@/utils/const";
 
@@ -55,6 +57,10 @@ const CotizacionesLista = () => {
   const [cotizacionAEliminar, setCotizacionAEliminar] = useState<Cotizacion | null>(null);
   const [eliminando, setEliminando] = useState(false);
   const [eliminandoId, setEliminandoId] = useState<string | null>(null);
+  const [dialogDetalleAbierto, setDialogDetalleAbierto] = useState(false);
+  const [cotizacionDetalle, setCotizacionDetalle] = useState<Cotizacion | null>(null);
+  const [datosCotizacionDetalle, setDatosCotizacionDetalle] = useState<DatosCotizacion | null>(null);
+  const [cargandoDetalle, setCargandoDetalle] = useState(false);
 
   const itemsPerPage = 10;
   const esAdmin = user?.role === roles.ADMIN;
@@ -162,17 +168,31 @@ const CotizacionesLista = () => {
     !!fechaHasta;
 
   const handleSeleccionarCotizacion = async (cotizacion: Cotizacion) => {
+    setCotizacionDetalle(cotizacion);
+    setDatosCotizacionDetalle(null);
+    setDialogDetalleAbierto(true);
     try {
+      setCargandoDetalle(true);
       const datos = await CotizacionesService.obtenerPorId(Number(cotizacion.id));
       if (datos) {
-        navigate("/nueva", { state: { plantilla: datos } });
+        setDatosCotizacionDetalle(datos);
       } else {
         toast.error("No se pudo cargar la cotización");
+        setDialogDetalleAbierto(false);
       }
     } catch (error) {
       toast.error("Error al cargar la cotización");
       console.error(error);
+      setDialogDetalleAbierto(false);
+    } finally {
+      setCargandoDetalle(false);
     }
+  };
+
+  const handleCrearDesdeCotizacion = () => {
+    if (!datosCotizacionDetalle) return;
+    setDialogDetalleAbierto(false);
+    navigate("/nueva", { state: { plantilla: datosCotizacionDetalle } });
   };
 
   const handleClickEliminar = (cotizacion: Cotizacion, e: React.MouseEvent) => {
@@ -521,6 +541,133 @@ const CotizacionesLista = () => {
           </>
         )}
       </div>
+
+      {/* ── Detail dialog ───────────────────────────────────────── */}
+      <Dialog open={dialogDetalleAbierto} onOpenChange={setDialogDetalleAbierto}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-lg">
+              <FileText className="h-5 w-5 text-primary shrink-0" />
+              <span className="font-mono text-primary">{cotizacionDetalle?.numero}</span>
+              <span className="text-muted-foreground font-normal">—</span>
+              <span className="truncate">{cotizacionDetalle?.cliente}</span>
+            </DialogTitle>
+            <DialogDescription>
+              Detalle de la cotización en modo solo lectura
+            </DialogDescription>
+          </DialogHeader>
+
+          {cargandoDetalle ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="h-8 w-8 text-primary animate-spin" />
+            </div>
+          ) : datosCotizacionDetalle ? (
+            <div className="space-y-5 py-2">
+              {/* Info general */}
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 rounded-lg border bg-muted/30 p-4 text-sm">
+                <div className="space-y-0.5">
+                  <p className="text-xs text-muted-foreground uppercase tracking-wide">Fecha</p>
+                  <p className="font-medium">{cotizacionDetalle?.fecha || "—"}</p>
+                </div>
+                <div className="space-y-0.5">
+                  <p className="text-xs text-muted-foreground uppercase tracking-wide">Evento</p>
+                  <p className="font-medium">{datosCotizacionDetalle.evento || "—"}</p>
+                </div>
+                <div className="space-y-0.5">
+                  <p className="text-xs text-muted-foreground uppercase tracking-wide">Total</p>
+                  <p className="font-semibold text-primary">{formatCurrency(cotizacionDetalle?.montoTotal ?? 0)}</p>
+                </div>
+                {datosCotizacionDetalle.descuento > 0 && (
+                  <div className="space-y-0.5">
+                    <p className="text-xs text-muted-foreground uppercase tracking-wide">Descuento</p>
+                    <p className="font-medium">{datosCotizacionDetalle.descuento}%</p>
+                  </div>
+                )}
+              </div>
+
+              {/* Productos agrupados por servicio */}
+              {(() => {
+                const grupos = datosCotizacionDetalle.productos.reduce<Record<string, typeof datosCotizacionDetalle.productos>>(
+                  (acc, p) => {
+                    const key = p.nombreServicio?.trim() || "Sin servicio";
+                    if (!acc[key]) acc[key] = [];
+                    acc[key].push(p);
+                    return acc;
+                  },
+                  {}
+                );
+                const gruposEntries = Object.entries(grupos);
+
+                return (
+                  <div className="space-y-3">
+                    <h3 className="text-sm font-semibold text-foreground">
+                      Productos / Servicios ({datosCotizacionDetalle.productos.length})
+                    </h3>
+                    {gruposEntries.map(([servicio, productos]) => (
+                      <div key={servicio} className="rounded-lg border overflow-hidden">
+                        <div className="px-3 py-2 bg-muted/50 border-b">
+                          <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                            {servicio}
+                          </span>
+                        </div>
+                        <table className="w-full text-sm">
+                          <thead>
+                            <tr className="border-b bg-muted/20">
+                              <th className="px-3 py-2 text-left text-xs text-muted-foreground font-medium uppercase tracking-wide">Descripción</th>
+                              <th className="px-3 py-2 text-center text-xs text-muted-foreground font-medium uppercase tracking-wide w-16">Cant.</th>
+                              <th className="px-3 py-2 text-right text-xs text-muted-foreground font-medium uppercase tracking-wide">Precio unit.</th>
+                              <th className="px-3 py-2 text-right text-xs text-muted-foreground font-medium uppercase tracking-wide">Subtotal</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {productos.map((p, i) => (
+                              <tr key={i} className="border-b last:border-0">
+                                <td className="px-3 py-2 text-foreground">{p.descripcion}</td>
+                                <td className="px-3 py-2 text-center tabular-nums text-muted-foreground">{p.cantidad}</td>
+                                <td className="px-3 py-2 text-right tabular-nums text-muted-foreground">{formatCurrency(p.precioUnitario)}</td>
+                                <td className="px-3 py-2 text-right tabular-nums font-medium">{formatCurrency(p.cantidad * p.precioUnitario)}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    ))}
+                  </div>
+                );
+              })()}
+
+              {/* Consideraciones */}
+              {datosCotizacionDetalle.consideraciones && (
+                <div className="space-y-2">
+                  <h3 className="text-sm font-semibold text-foreground">Consideraciones</h3>
+                  <div className="rounded-lg border bg-muted/30 p-3 text-sm text-muted-foreground whitespace-pre-wrap">
+                    {datosCotizacionDetalle.consideraciones}
+                  </div>
+                </div>
+              )}
+            </div>
+          ) : null}
+
+          <DialogFooter className="gap-2 sm:gap-2 pt-2">
+            <Button
+              variant="outline"
+              onClick={() => setDialogDetalleAbierto(false)}
+              className="gap-2"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Volver
+            </Button>
+            <Button
+              onClick={handleCrearDesdeCotizacion}
+              disabled={!datosCotizacionDetalle || cargandoDetalle}
+              className="gap-2"
+            >
+              <Copy className="h-4 w-4" />
+              Crear cotización a partir de esta
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* ── Delete dialog ───────────────────────────────────────── */}
       <Dialog open={dialogEliminarAbierto} onOpenChange={setDialogEliminarAbierto}>
