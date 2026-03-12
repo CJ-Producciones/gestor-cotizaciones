@@ -11,7 +11,6 @@ import {
   ImageRun,
   AlignmentType,
   WidthType,
-  HeadingLevel,
   PageNumber,
   BorderStyle,
 } from "docx";
@@ -111,7 +110,7 @@ export class WordExportService {
               data: encabezadoData,
               transformation: {
                 width: 600,
-                height: 100,
+                height: 180,
               },
               type: "png",
             }),
@@ -144,22 +143,18 @@ export class WordExportService {
           children: [
             new TextRun({
               text: "Página ",
-              size: 18,
               color: "666666",
             }),
             new TextRun({
               children: [PageNumber.CURRENT],
-              size: 18,
               color: "666666",
             }),
             new TextRun({
               text: " de ",
-              size: 18,
               color: "666666",
             }),
             new TextRun({
               children: [PageNumber.TOTAL_PAGES],
-              size: 18,
               color: "666666",
             }),
           ],
@@ -177,7 +172,6 @@ export class WordExportService {
         children: [
           new TextRun({
             text: `Medellín, ${this.formatDateLong(fechaHoy)}`,
-            size: 22,
           }),
         ],
         spacing: { after: 200 },
@@ -187,7 +181,6 @@ export class WordExportService {
         children: [
           new TextRun({
             text: "Sr./Sra.",
-            size: 22,
           }),
         ],
         spacing: { after: 50 },
@@ -197,7 +190,6 @@ export class WordExportService {
           new TextRun({
             text: datos.cliente || "Sin especificar",
             bold: true,
-            size: 22,
           }),
         ],
         spacing: { after: 300 },
@@ -208,11 +200,9 @@ export class WordExportService {
           new TextRun({
             text: "CJ PRODUCCIONES: ",
             bold: true,
-            size: 22,
           }),
           new TextRun({
             text: "Es una empresa especializada en la producción de bodas, eventos corporativos, espectáculos artísticos y musicales.",
-            size: 22,
           }),
         ],
         spacing: { after: 300 },
@@ -222,25 +212,20 @@ export class WordExportService {
         children: [
           new TextRun({
             text: "La siguiente es la cotización para: ",
-            size: 22,
           }),
           new TextRun({
             text: datos.evento || "el evento",
             bold: true,
-            size: 22,
           }),
           new TextRun({
             text: ", que se realizará el día ",
-            size: 22,
           }),
           new TextRun({
             text: fechaEvento ? this.formatDateLongInverted(fechaEvento) : "a confirmar",
             bold: true,
-            size: 22,
           }),
           new TextRun({
             text: ".",
-            size: 22,
           }),
         ],
         spacing: { after: 400 },
@@ -275,7 +260,6 @@ export class WordExportService {
             new TextRun({
               text: `${nombreServicio} - ${this.formatCurrency(totalServicio)}`,
               bold: true,
-              size: 24,
             }),
           ],
           spacing: { before: 200, after: 100 },
@@ -289,7 +273,6 @@ export class WordExportService {
             new TextRun({
               text: "Productos:",
               bold: true,
-              size: 22,
             }),
           ],
           spacing: { after: 50 },
@@ -303,7 +286,6 @@ export class WordExportService {
             children: [
               new TextRun({
                 text: producto.descripcion,
-                size: 22,
               }),
             ],
             bullet: {
@@ -330,8 +312,8 @@ export class WordExportService {
         new Paragraph({
           alignment: AlignmentType.RIGHT,
           children: [
-            new TextRun({ text: "Subtotal: ", size: 22 }),
-            new TextRun({ text: this.formatCurrency(totales.subtotal), size: 22 }),
+            new TextRun({ text: "Subtotal: " }),
+            new TextRun({ text: this.formatCurrency(totales.subtotal) }),
           ],
         })
       );
@@ -344,12 +326,10 @@ export class WordExportService {
           children: [
             new TextRun({
               text: `Descuento (${datos.descuento}%): `,
-              size: 22,
               color: "22c55e",
             }),
             new TextRun({
               text: `-${this.formatCurrency(totales.descuentoMonto)}`,
-              size: 22,
               color: "22c55e",
             }),
           ],
@@ -362,8 +342,8 @@ export class WordExportService {
         new Paragraph({
           alignment: AlignmentType.RIGHT,
           children: [
-            new TextRun({ text: `IVA (${ivaPorcentaje}%): `, size: 22 }),
-            new TextRun({ text: this.formatCurrency(totales.iva), size: 22 }),
+            new TextRun({ text: `IVA (${ivaPorcentaje}%): ` }),
+            new TextRun({ text: this.formatCurrency(totales.iva) }),
           ],
         })
       );
@@ -373,8 +353,8 @@ export class WordExportService {
       new Paragraph({
         alignment: AlignmentType.RIGHT,
         children: [
-          new TextRun({ text: "TOTAL: ", bold: true, size: 28 }),
-          new TextRun({ text: this.formatCurrency(totales.total), bold: true, size: 28 }),
+          new TextRun({ text: "TOTAL: ", bold: true }),
+          new TextRun({ text: this.formatCurrency(totales.total), bold: true }),
         ],
         spacing: { after: 400 },
       })
@@ -392,15 +372,14 @@ export class WordExportService {
 
     return [
       new Paragraph({
-        heading: HeadingLevel.HEADING_2,
-        children: [new TextRun({ text: "Consideraciones", bold: true, size: 26 })],
+        children: [new TextRun({ text: "Consideraciones", bold: true })],
         spacing: { before: 400, after: 200 },
       }),
       ...lineas.map(
         (linea) =>
           new Paragraph({
             bullet: { level: 0 },
-            children: [new TextRun({ text: linea.trim(), size: 22 })],
+            children: [new TextRun({ text: linea.trim() })],
           })
       ),
     ];
@@ -428,7 +407,6 @@ export class WordExportService {
           new TextRun({
             text: datos.nombreEncargado || "Carlos Jaramillo",
             bold: true,
-            size: 24,
           }),
         ],
       }),
@@ -436,7 +414,6 @@ export class WordExportService {
         children: [
           new TextRun({
             text: datos.cargo || "Director general",
-            size: 22,
             color: "666666",
           }),
         ],
@@ -445,7 +422,6 @@ export class WordExportService {
         children: [
           new TextRun({
             text: "carlos.jaramillo@cjproducciones.com",
-            size: 22,
             color: "666666",
           }),
         ],
@@ -459,6 +435,16 @@ export class WordExportService {
     const seccionFirma = await this.crearSeccionFirma(datos);
 
     const doc = new Document({
+      styles: {
+        default: {
+          document: {
+            run: {
+              font: "Century Gothic",
+              size: 24,
+            },
+          },
+        },
+      },
       sections: [
         {
           headers: { default: header },
@@ -466,9 +452,8 @@ export class WordExportService {
           children: [
             ...this.crearSeccionIntroduccion(datos),
             new Paragraph({
-              heading: HeadingLevel.HEADING_2,
               children: [
-                new TextRun({ text: "Los servicios que ofrecemos son los siguientes:", bold: true, size: 26 }),
+                new TextRun({ text: "Los servicios que ofrecemos son los siguientes:", bold: true }),
               ],
               spacing: { after: 200 },
             }),
