@@ -74,7 +74,12 @@ const NuevaCotizacion = () => {
             ? Number(p.id)
             : null;
 
-      return { ...p, id: `${Date.now()}-${index}`, productoId };
+      return {
+        ...p,
+        id: `${Date.now()}-${index}`,
+        productoId,
+        precioVariable: p.precioVariable ?? p.precioUnitario === 0,
+      };
     });
 
     setDatos({ ...dataBase, productos });
@@ -181,6 +186,7 @@ const NuevaCotizacion = () => {
         servicioId: producto.id_servicio,
         nombreServicio,
         descripcionProducto: producto.descripcion ?? null,
+        precioVariable: !producto.precio,
       };
 
       return { ...prev, productos: [...prev.productos, nuevoProducto] };
@@ -208,6 +214,7 @@ const NuevaCotizacion = () => {
           servicioId: p.id_servicio,
           nombreServicio: servicios.find((s) => s.id === p.id_servicio)?.nombre || "Servicio",
           descripcionProducto: p.descripcion ?? null,
+          precioVariable: !p.precio,
         }));
 
       if (nuevos.length === 0) return prev;
@@ -230,6 +237,15 @@ const NuevaCotizacion = () => {
       ...prev,
       productos: prev.productos.map((p) =>
         p.id === id ? { ...p, cantidad: Math.max(1, cantidad) } : p
+      ),
+    }));
+  };
+
+  const handlePrecioChange = (id: string, precio: number) => {
+    setDatos((prev) => ({
+      ...prev,
+      productos: prev.productos.map((p) =>
+        p.id === id ? { ...p, precioUnitario: precio } : p
       ),
     }));
   };
@@ -642,6 +658,26 @@ const NuevaCotizacion = () => {
                                 className="w-16 h-7 text-center text-xs mx-auto"
                               />
                             </td>
+                            {producto.precioVariable ? (
+                              <td className="px-3 py-2.5 w-28">
+                                <Input
+                                  type="number"
+                                  min="0"
+                                  value={producto.precioUnitario || ""}
+                                  placeholder="Precio"
+                                  onChange={(e) =>
+                                    handlePrecioChange(producto.id, Math.max(0, Number(e.target.value)))
+                                  }
+                                  className="w-24 h-7 text-right text-xs mx-auto"
+                                />
+                              </td>
+                            ) : (
+                              <td className="px-4 py-2.5 text-right whitespace-nowrap">
+                                <span className="text-sm tabular-nums font-medium text-foreground">
+                                  {formatCurrency(producto.precioUnitario)}
+                                </span>
+                              </td>
+                            )}
                             <td className="px-4 py-2.5 text-right whitespace-nowrap">
                               <span className="text-sm tabular-nums font-medium text-foreground">
                                 {formatCurrency(producto.cantidad * producto.precioUnitario)}
@@ -670,7 +706,7 @@ const NuevaCotizacion = () => {
 
         {/* ── Right column: preview + actions ───────────────────── */}
         <div className="space-y-4">
-          <VistaPrevia ref={vistaPreviaRef} datos={datos} />
+          <VistaPrevia ref={vistaPreviaRef} datos={datos} onPrecioChange={handlePrecioChange} />
 
           {/* Action buttons */}
           <div className="rounded-xl border bg-card p-4">
