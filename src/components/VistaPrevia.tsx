@@ -4,9 +4,10 @@ import logoCJ from "@/assets/LogoCJ.png";
 
 interface VistaPreviaProps {
   datos: DatosCotizacion;
+  onPrecioChange?: (productoId: string, nuevoPrecio: number) => void;
 }
 
-const VistaPrevia = forwardRef<HTMLDivElement, VistaPreviaProps>(({ datos }, ref) => {
+const VistaPrevia = forwardRef<HTMLDivElement, VistaPreviaProps>(({ datos, onPrecioChange }, ref) => {
   const subtotal = datos.productos.reduce(
     (acc, p) => acc + p.cantidad * p.precioUnitario,
     0
@@ -118,16 +119,34 @@ const VistaPrevia = forwardRef<HTMLDivElement, VistaPreviaProps>(({ datos }, ref
                       </tr>
                     </thead>
                     <tbody>
-                      {productos.map((producto) => (
-                        <tr key={producto.id} className="border-t border-border">
-                          <td className="p-2">{producto.descripcion}</td>
-                          <td className="p-2 text-center">{producto.cantidad}</td>
-                          <td className="p-2 text-right">{formatCurrency(producto.precioUnitario)}</td>
-                          <td className="p-2 text-right">
-                            {formatCurrency(producto.cantidad * producto.precioUnitario)}
-                          </td>
-                        </tr>
-                      ))}
+                      {productos.map((producto) => {
+                        const esEditable = producto.precioVariable && onPrecioChange;
+                        return (
+                          <tr key={producto.id} className="border-t border-border">
+                            <td className="p-2">{producto.descripcion}</td>
+                            <td className="p-2 text-center">{producto.cantidad}</td>
+                            <td className="p-2 text-right">
+                              {esEditable ? (
+                                <input
+                                  type="number"
+                                  min="0"
+                                  value={producto.precioUnitario || ""}
+                                  placeholder="0"
+                                  onChange={(e) =>
+                                    onPrecioChange(producto.id, Math.max(0, Number(e.target.value)))
+                                  }
+                                  className="w-20 rounded border border-primary/40 bg-primary/5 px-1.5 py-0.5 text-right text-xs tabular-nums text-foreground outline-none focus:border-primary focus:ring-1 focus:ring-primary/30"
+                                />
+                              ) : (
+                                formatCurrency(producto.precioUnitario)
+                              )}
+                            </td>
+                            <td className="p-2 text-right">
+                              {formatCurrency(producto.cantidad * producto.precioUnitario)}
+                            </td>
+                          </tr>
+                        );
+                      })}
                     </tbody>
                   </table>
                   </div>

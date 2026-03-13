@@ -135,6 +135,7 @@ const toDatosCotizacion = (cotizacionDB: CotizacionDB): DatosCotizacion => {
     servicioId: item.servicio_id,
     nombreServicio: item.nombre_servicio,
     descripcionProducto: item.descripcion_producto,
+    precioVariable: toNumber(item.precio_unitario) === 0,
   }));
 
   // Concatenar las consideraciones ordenadas

@@ -33,6 +33,7 @@ function toAppFormat(plantillaDB: PlantillaDB): PlantillaCotizacion {
             servicioId: servicio.servicio_id ?? null,
             nombreServicio: servicio.nombre_servicio || 'Servicio',
             descripcionProducto: producto.descripcion_producto ?? null,
+            precioVariable: producto.precio_unitario === 0,
           });
         }
       }

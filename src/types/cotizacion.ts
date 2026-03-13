@@ -27,6 +27,7 @@ export interface Producto {
   servicioId?: number | null;
   nombreServicio?: string | null;
   descripcionProducto?: string | null;
+  precioVariable?: boolean;
 }
 
 export interface ProductoServicio {
