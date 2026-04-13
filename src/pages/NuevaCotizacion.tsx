@@ -50,6 +50,7 @@ const NuevaCotizacion = () => {
   const [datos, setDatos] = useState<DatosCotizacion>({
     cliente: "",
     evento: "",
+    lugar: "",
     consideraciones: "",
     descuento: 0,
     iva: 19,
@@ -325,6 +326,7 @@ const NuevaCotizacion = () => {
     setDatos({
       cliente: "",
       evento: "",
+      lugar: "",
       consideraciones: "",
       descuento: 0,
       iva: 19,
@@ -405,6 +407,16 @@ const NuevaCotizacion = () => {
                     onChange={(e) => handleInputChange("evento", e.target.value)}
                   />
                 </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs text-muted-foreground">Lugar de evento</label>
+                <Input
+                  className="h-9"
+                  placeholder="Lugar donde se realizará el evento"
+                  value={datos.lugar}
+                  onChange={(e) => handleInputChange("lugar", e.target.value)}
+                />
               </div>
 
               <div className="space-y-1.5">

@@ -85,6 +85,7 @@ const VistaPrevia = forwardRef<HTMLDivElement, VistaPreviaProps>(({ datos, onPre
             <h4 className="font-semibold text-foreground mb-2">Evento</h4>
             <div className="text-xs text-muted-foreground space-y-0.5">
               <p className="font-medium text-foreground">{datos.evento || "Nombre del evento"}</p>
+              {datos.lugar && <p>{datos.lugar}</p>}
             </div>
           </div>
         </div>

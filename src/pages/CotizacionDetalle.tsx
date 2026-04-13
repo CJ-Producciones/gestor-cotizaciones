@@ -89,6 +89,7 @@ const CotizacionDetallePage = () => {
     const datos: DatosCotizacion = {
       cliente: cot.nombre_cliente ?? "",
       evento: cot.evento ?? "",
+      lugar: cot.lugar ?? "",
       consideraciones,
       descuento: toNumber(cot.descuento ?? 0),
       fecha: cot.fecha ?? "",

@@ -44,6 +44,7 @@ export interface ProductoServicio {
 export interface DatosCotizacion {
   cliente: string;
   evento: string;
+  lugar: string;
   consideraciones: string;
   descuento: number;
   iva?: number;
@@ -153,6 +154,7 @@ export interface CotizacionDB {
   id: number;
   nombre_cliente: string | null;
   evento: string | null;
+  lugar: string | null;
   descuento: number | null;
   fecha: string | null;
   total: number | null;

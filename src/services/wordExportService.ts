@@ -224,6 +224,12 @@ export class WordExportService {
             text: fechaEvento ? this.formatDateLongInverted(fechaEvento) : "a confirmar",
             bold: true,
           }),
+          ...(datos.lugar
+            ? [
+                new TextRun({ text: " en " }),
+                new TextRun({ text: datos.lugar, bold: true }),
+              ]
+            : []),
           new TextRun({
             text: ".",
           }),
@@ -285,7 +291,7 @@ export class WordExportService {
           new Paragraph({
             children: [
               new TextRun({
-                text: producto.descripcion,
+                text: `${producto.cantidad} ${producto.descripcion}`,
               }),
             ],
             bullet: {
@@ -364,24 +370,38 @@ export class WordExportService {
   }
 
   private static crearSeccionConsideraciones(datos: DatosCotizacion): Paragraph[] {
-    if (!datos.consideraciones || datos.consideraciones.trim() === "") {
-      return [];
-    }
+    const CONSIDERACIONES_DEFAULT = [
+      "La cotización tiene una vigencia de 15 días.",
+      "Los valores mencionados son antes de IVA.",
+      "La propuesta presentada es confidencial, no se permite compartir dicha propuesta sin autorización.",
+    ];
 
-    const lineas = datos.consideraciones.split("\n").filter((l) => l.trim());
+    const lineasUsuario = datos.consideraciones
+      ? datos.consideraciones.split("\n").filter((l) => l.trim())
+      : [];
+
+    const todasLasLineas = [...CONSIDERACIONES_DEFAULT, ...lineasUsuario];
 
     return [
       new Paragraph({
         children: [new TextRun({ text: "Consideraciones", bold: true })],
         spacing: { before: 400, after: 200 },
       }),
-      ...lineas.map(
+      ...todasLasLineas.map(
         (linea) =>
           new Paragraph({
             bullet: { level: 0 },
             children: [new TextRun({ text: linea.trim() })],
           })
       ),
+      new Paragraph({
+        children: [
+          new TextRun({
+            text: "En dicha cotización está incluido transporte, montaje, desmontaje y todo el equipo técnico encargado para garantizarles a nuestros clientes el ideal desempeño de la actividad.",
+          }),
+        ],
+        spacing: { before: 200 },
+      }),
     ];
   }
 

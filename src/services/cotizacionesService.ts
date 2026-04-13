@@ -18,6 +18,7 @@ type CotizacionDB = {
   estado?: string | null;
   status?: string | null;
   evento?: string | null;
+  lugar?: string | null;
   descuento?: number | string | null;
   user_id?: string | null;
   cuerpo?: CotizacionCuerpoDB[];
@@ -147,6 +148,7 @@ const toDatosCotizacion = (cotizacionDB: CotizacionDB): DatosCotizacion => {
   return {
     cliente: cotizacionDB.nombre_cliente || cotizacionDB.cliente || '',
     evento: cotizacionDB.evento || '',
+    lugar: cotizacionDB.lugar || '',
     consideraciones,
     descuento: toNumber(cotizacionDB.descuento) || 0,
     fecha: cotizacionDB.fecha || '',
@@ -245,6 +247,7 @@ export const crearCotizacion = async (
     .insert({
       nombre_cliente: datos.cliente,
       evento: datos.evento || null,
+      lugar: datos.lugar || null,
       descuento,
       fecha: datos.fecha || null,
       total,
