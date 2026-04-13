@@ -45,7 +45,7 @@ function toAppFormat(plantillaDB: PlantillaDB): PlantillaCotizacion {
   const datos: DatosCotizacion = {
     cliente: '',
     evento: '',
-    consideraciones: '',
+    notas: '',
     descuento: plantillaDB.descuento ?? 0,
     fecha: '',
     nombreEncargado: '',

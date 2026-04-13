@@ -636,12 +636,12 @@ const CotizacionesLista = () => {
                 );
               })()}
 
-              {/* Consideraciones */}
-              {datosCotizacionDetalle.consideraciones && (
+              {/* Notas */}
+              {datosCotizacionDetalle.notas && (
                 <div className="space-y-2">
-                  <h3 className="text-sm font-semibold text-foreground">Consideraciones</h3>
+                  <h3 className="text-sm font-semibold text-foreground">Notas</h3>
                   <div className="rounded-lg border bg-muted/30 p-3 text-sm text-muted-foreground whitespace-pre-wrap">
-                    {datosCotizacionDetalle.consideraciones}
+                    {datosCotizacionDetalle.notas}
                   </div>
                 </div>
               )}

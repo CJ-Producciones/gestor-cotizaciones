@@ -139,8 +139,8 @@ const toDatosCotizacion = (cotizacionDB: CotizacionDB): DatosCotizacion => {
     precioVariable: toNumber(item.precio_unitario) === 0,
   }));
 
-  // Concatenar las consideraciones ordenadas
-  const consideraciones = (cotizacionDB.consideraciones || [])
+  // Concatenar las notas ordenadas
+  const notas = (cotizacionDB.consideraciones || [])
     .sort((a, b) => (a.orden || 0) - (b.orden || 0))
     .map((c) => c.texto)
     .join('\n');
@@ -149,7 +149,7 @@ const toDatosCotizacion = (cotizacionDB: CotizacionDB): DatosCotizacion => {
     cliente: cotizacionDB.nombre_cliente || cotizacionDB.cliente || '',
     evento: cotizacionDB.evento || '',
     lugar: cotizacionDB.lugar || '',
-    consideraciones,
+    notas,
     descuento: toNumber(cotizacionDB.descuento) || 0,
     fecha: cotizacionDB.fecha || '',
     nombreEncargado: '',
@@ -286,13 +286,13 @@ export const crearCotizacion = async (
     throw new Error("No se pudieron guardar los productos de la cotización");
   }
 
-  const consideraciones = datos.consideraciones
+  const notas = datos.notas
     .split(/\r?\n/)
     .map((linea) => linea.trim())
     .filter(Boolean);
 
-  if (consideraciones.length > 0) {
-    const consideracionesDB = consideraciones.map((texto, index) => ({
+  if (notas.length > 0) {
+    const consideracionesDB = notas.map((texto, index) => ({
       cotizacion_id: cotizacionId,
       texto,
       orden: index + 1,

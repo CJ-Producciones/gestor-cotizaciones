@@ -369,29 +369,45 @@ export class WordExportService {
     return paragraphs;
   }
 
-  private static crearSeccionConsideraciones(datos: DatosCotizacion): Paragraph[] {
+  private static crearSeccionNotasYConsideraciones(datos: DatosCotizacion): Paragraph[] {
     const CONSIDERACIONES_DEFAULT = [
       "La cotización tiene una vigencia de 15 días.",
       "Los valores mencionados son antes de IVA.",
       "La propuesta presentada es confidencial, no se permite compartir dicha propuesta sin autorización.",
     ];
 
-    const lineasUsuario = datos.consideraciones
-      ? datos.consideraciones.split("\n").filter((l) => l.trim())
+    const lineasNotas = datos.notas
+      ? datos.notas.split("\n").filter((l) => l.trim())
       : [];
 
-    const todasLasLineas = [...CONSIDERACIONES_DEFAULT, ...lineasUsuario];
+    const resultado: Paragraph[] = [];
 
-    return [
+    if (lineasNotas.length > 0) {
+      resultado.push(
+        new Paragraph({
+          children: [new TextRun({ text: "Notas", bold: true })],
+          spacing: { before: 400, after: 200 },
+        }),
+        ...lineasNotas.map(
+          (linea) =>
+            new Paragraph({
+              bullet: { level: 0 },
+              children: [new TextRun({ text: linea.trim() })],
+            })
+        )
+      );
+    }
+
+    resultado.push(
       new Paragraph({
         children: [new TextRun({ text: "Consideraciones", bold: true })],
         spacing: { before: 400, after: 200 },
       }),
-      ...todasLasLineas.map(
+      ...CONSIDERACIONES_DEFAULT.map(
         (linea) =>
           new Paragraph({
             bullet: { level: 0 },
-            children: [new TextRun({ text: linea.trim() })],
+            children: [new TextRun({ text: linea })],
           })
       ),
       new Paragraph({
@@ -401,8 +417,10 @@ export class WordExportService {
           }),
         ],
         spacing: { before: 200 },
-      }),
-    ];
+      })
+    );
+
+    return resultado;
   }
 
   private static async crearSeccionFirma(datos: DatosCotizacion): Promise<Paragraph[]> {
@@ -479,7 +497,7 @@ export class WordExportService {
             }),
             ...this.crearSeccionesServicios(datos),
             ...this.crearSeccionTotales(datos),
-            ...this.crearSeccionConsideraciones(datos),
+            ...this.crearSeccionNotasYConsideraciones(datos),
             ...seccionFirma,
           ],
         },

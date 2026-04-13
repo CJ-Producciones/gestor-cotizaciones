@@ -70,7 +70,7 @@ const CotizacionDetallePage = () => {
     if (!detalle) return;
 
     const cot = detalle.cotizacion;
-    const consideraciones = detalle.consideraciones
+    const notas = detalle.consideraciones
       .map((item) => item.texto)
       .filter(Boolean)
       .join("\n");
@@ -90,7 +90,7 @@ const CotizacionDetallePage = () => {
       cliente: cot.nombre_cliente ?? "",
       evento: cot.evento ?? "",
       lugar: cot.lugar ?? "",
-      consideraciones,
+      notas,
       descuento: toNumber(cot.descuento ?? 0),
       fecha: cot.fecha ?? "",
       nombreEncargado: "Carlos Jaramillo",

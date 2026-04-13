@@ -45,7 +45,7 @@ export interface DatosCotizacion {
   cliente: string;
   evento: string;
   lugar: string;
-  consideraciones: string;
+  notas: string;
   descuento: number;
   iva?: number;
   fecha: string;

@@ -185,12 +185,12 @@ const VistaPrevia = forwardRef<HTMLDivElement, VistaPreviaProps>(({ datos, onPre
           </div>
         </div>
 
-        {/* Consideraciones */}
-        {datos.consideraciones && (
+        {/* Notas */}
+        {datos.notas && (
           <div className="mb-6">
-            <h4 className="font-semibold text-foreground mb-2">Consideraciones</h4>
+            <h4 className="font-semibold text-foreground mb-2">Notas</h4>
             <div className="text-xs text-muted-foreground whitespace-pre-line">
-              {datos.consideraciones}
+              {datos.notas}
             </div>
           </div>
         )}

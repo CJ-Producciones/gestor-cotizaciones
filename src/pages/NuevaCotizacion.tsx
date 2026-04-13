@@ -51,7 +51,7 @@ const NuevaCotizacion = () => {
     cliente: "",
     evento: "",
     lugar: "",
-    consideraciones: "",
+    notas: "",
     descuento: 0,
     iva: 19,
     fecha: "",
@@ -253,11 +253,11 @@ const NuevaCotizacion = () => {
 
   const handleGuardarCotizacion = async () => {
     if (!datos.cliente) {
-      toast.error("Ingresá el nombre del cliente");
+      toast.error("Ingresa el nombre del cliente");
       return;
     }
     if (datos.productos.length === 0) {
-      toast.error("Agregá al menos un producto");
+      toast.error("Agrega al menos un producto");
       return;
     }
     try {
@@ -275,7 +275,7 @@ const NuevaCotizacion = () => {
 
   const handleAbrirDialogoPlantilla = () => {
     if (datos.productos.length === 0) {
-      toast.error("Agregá al menos un producto antes de guardar como plantilla");
+      toast.error("Agrega al menos un producto antes de guardar como plantilla");
       return;
     }
     setDialogPlantillaAbierto(true);
@@ -283,7 +283,7 @@ const NuevaCotizacion = () => {
 
   const handleGuardarComoPlantilla = async () => {
     if (!nombrePlantilla.trim()) {
-      toast.error("Ingresá un nombre para la plantilla");
+      toast.error("Ingresa un nombre para la plantilla");
       return;
     }
 
@@ -327,7 +327,7 @@ const NuevaCotizacion = () => {
       cliente: "",
       evento: "",
       lugar: "",
-      consideraciones: "",
+      notas: "",
       descuento: 0,
       iva: 19,
       fecha: "",
@@ -421,13 +421,13 @@ const NuevaCotizacion = () => {
 
               <div className="space-y-1.5">
                 <label className="text-xs text-muted-foreground">
-                  Consideraciones <span className="text-muted-foreground/60">(una por línea)</span>
+                  Notas <span className="text-muted-foreground/60">(una por línea)</span>
                 </label>
                 <Textarea
                   className="resize-none text-sm"
-                  placeholder="Ingresá las consideraciones del servicio…"
-                  value={datos.consideraciones}
-                  onChange={(e) => handleInputChange("consideraciones", e.target.value)}
+                  placeholder="Ingresa las notas del servicio…"
+                  value={datos.notas}
+                  onChange={(e) => handleInputChange("notas", e.target.value)}
                   rows={3}
                 />
               </div>
