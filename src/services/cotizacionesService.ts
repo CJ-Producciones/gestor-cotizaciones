@@ -110,6 +110,13 @@ const calcularTotal = (productos: Producto[], descuento: number) => {
 /**
  * Convierte la estructura de BD al formato de lista para la aplicación
  */
+const formatHora = (value: unknown): string => {
+  if (!value) return "";
+  const date = new Date(String(value));
+  if (Number.isNaN(date.getTime())) return "";
+  return date.toLocaleTimeString("es-CO", { hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false });
+};
+
 const toAppFormat = (cotizacion: CotizacionDB): Cotizacion => {
   const idBase = cotizacion.id ?? cotizacion.created_at;
   return {
@@ -117,6 +124,7 @@ const toAppFormat = (cotizacion: CotizacionDB): Cotizacion => {
     numero: cotizacion.numero ?? cotizacion.codigo ?? generateNumero(cotizacion.id),
     cliente: cotizacion.cliente ?? cotizacion.nombre_cliente ?? "Sin cliente",
     fecha: formatFecha(cotizacion.created_at ?? ""),
+    horaCreacion: formatHora(cotizacion.created_at),
     montoTotal: toNumber(cotizacion.monto_total ?? cotizacion.montoTotal ?? cotizacion.total ?? cotizacion.monto ?? 0),
     estado: normalizeEstado(cotizacion.estado ?? cotizacion.status),
   };

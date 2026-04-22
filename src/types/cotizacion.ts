@@ -5,6 +5,7 @@ export interface Cotizacion {
   numero: string;
   cliente: string;
   fecha: string;
+  horaCreacion: string;
   montoTotal: number;
   estado: EstadoCotizacion;
 }

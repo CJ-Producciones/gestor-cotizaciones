@@ -440,6 +440,11 @@ const CotizacionesLista = () => {
                           <span className="text-sm tabular-nums text-muted-foreground">
                             {cotizacion.fecha}
                           </span>
+                          {cotizacion.horaCreacion && (
+                            <span className="block text-xs tabular-nums text-muted-foreground/60">
+                              {cotizacion.horaCreacion}
+                            </span>
+                          )}
                         </TableCell>
 
                         <TableCell className="text-right">
