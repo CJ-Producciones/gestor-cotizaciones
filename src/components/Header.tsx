@@ -103,9 +103,9 @@ const Header = () => {
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className="flex items-center gap-2 md:gap-3 h-auto py-1.5 px-2 md:px-3 hover:bg-muted">
                 <Avatar className="h-8 w-8">
-                  <AvatarFallback>{user ? getInitials(user.email) : "U"}</AvatarFallback>
+                  <AvatarFallback>{user ? getInitials(user.name || user.email) : "U"}</AvatarFallback>
                 </Avatar>
-                <span className="hidden md:inline text-sm text-foreground">{user?.email || "Usuario"}</span>
+                <span className="hidden md:inline text-sm text-foreground">{user?.name || user?.email || "Usuario"}</span>
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56">
@@ -114,7 +114,7 @@ const Header = () => {
               <DropdownMenuItem className="text-muted-foreground">
                 <Link to="/profile" className="flex items-center gap-2">
                   <User className="h-4 w-4" />
-                  {user?.email || "email@ejemplo.com"}
+                  {user?.name || user?.email || "Usuario"}
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuItem className="text-muted-foreground">
@@ -164,10 +164,10 @@ const Header = () => {
           <div className="mt-6 pt-6 border-t">
             <div className="flex items-center gap-3 px-3 py-2">
               <Avatar className="h-10 w-10">
-                <AvatarFallback>{user ? getInitials(user.email) : "U"}</AvatarFallback>
+                <AvatarFallback>{user ? getInitials(user.name) : "U"}</AvatarFallback>
               </Avatar>
               <div className="flex flex-col">
-                <span className="text-sm font-medium">{user?.email || "Usuario"}</span>
+                <span className="text-sm font-medium">{user?.name || "Usuario"}</span>
                 <span className="text-xs text-muted-foreground">Mi cuenta</span>
               </div>
             </div>

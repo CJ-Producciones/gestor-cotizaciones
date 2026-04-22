@@ -52,6 +52,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const fetchProfile = async (userId: string): Promise<string> => {
+    if (!userId) return "";
+    try {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("user_name")
+        .eq("id", userId)
+        .single();
+      if (error || !data) return "";
+      return data.user_name ?? "";
+    } catch {
+      return "";
+    }
+  };
+
   const logout = async () => {
     setUser(null);
     await withTimeout(singout(), 3000, { error: null });
@@ -71,11 +86,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       if (data.session) {
         const sessionUser = data.session.user;
-        const role = await fetchRole();
+        const [role, name] = await Promise.all([fetchRole(), fetchProfile(sessionUser.id)]);
         const userData = {
           token: data.session.access_token,
           email: sessionUser.email ?? "",
-          name: sessionUser.user_metadata?.name ?? "",
+          name,
           role,
         };
 
@@ -108,14 +123,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       if (event === "SIGNED_IN" || event === "INITIAL_SESSION") {
         const sessionUser = session.user;
-        const fetchedRole = await fetchRole();
+        const [fetchedRole, fetchedName] = await Promise.all([fetchRole(), fetchProfile(sessionUser.id)]);
 
         setUser((prev) => {
           const role = fetchedRole || prev?.role || "";
           return {
             token: session.access_token,
             email: sessionUser.email ?? "",
-            name: sessionUser.user_metadata?.name ?? "",
+            name: fetchedName || prev?.name || "",
             role,
           };
         });
@@ -137,11 +152,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     
     console.log(data);
 
-    const role = await fetchRole();
+    const [role, name] = await Promise.all([fetchRole(), fetchProfile(data.user?.id ?? "")]);
     const userData = {
       token: data.session?.access_token ?? "",
       email: data.user?.email ?? "",
-      name: data.user?.user_metadata?.name ?? "",
+      name,
       role,
     };
 
