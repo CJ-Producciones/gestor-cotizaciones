@@ -52,21 +52,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const fetchProfile = async (userId: string): Promise<string> => {
-    if (!userId) return "";
-    try {
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("user_name")
-        .eq("id", userId)
-        .single();
-      if (error || !data) return "";
-      return data.user_name ?? "";
-    } catch {
-      return "";
-    }
-  };
-
   const logout = async () => {
     setUser(null);
     await withTimeout(singout(), 3000, { error: null });
@@ -86,11 +71,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       if (data.session) {
         const sessionUser = data.session.user;
-        const [role, name] = await Promise.all([fetchRole(), fetchProfile(sessionUser.id)]);
+        const role = await fetchRole();
         const userData = {
           token: data.session.access_token,
           email: sessionUser.email ?? "",
-          name,
+          name: sessionUser.user_metadata?.name ?? sessionUser.user_metadata?.full_name ?? "",
           role,
         };
 
@@ -123,14 +108,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       if (event === "SIGNED_IN" || event === "INITIAL_SESSION") {
         const sessionUser = session.user;
-        const [fetchedRole, fetchedName] = await Promise.all([fetchRole(), fetchProfile(sessionUser.id)]);
+        const fetchedRole = await fetchRole();
 
         setUser((prev) => {
           const role = fetchedRole || prev?.role || "";
           return {
             token: session.access_token,
             email: sessionUser.email ?? "",
-            name: fetchedName || prev?.name || "",
+            name: sessionUser.user_metadata?.name ?? sessionUser.user_metadata?.full_name ?? "",
             role,
           };
         });
@@ -149,14 +134,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const { data, error } = await signIn(email, password);
 
     if (error) return false;
-    
+
     console.log(data);
 
-    const [role, name] = await Promise.all([fetchRole(), fetchProfile(data.user?.id ?? "")]);
+    const role = await fetchRole();
     const userData = {
       token: data.session?.access_token ?? "",
       email: data.user?.email ?? "",
-      name,
+      name: data.user?.user_metadata?.name ?? data.user?.user_metadata?.full_name ?? "",
       role,
     };
 
