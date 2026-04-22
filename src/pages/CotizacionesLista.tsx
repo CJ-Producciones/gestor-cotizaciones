@@ -564,25 +564,29 @@ const CotizacionesLista = () => {
           ) : datosCotizacionDetalle ? (
             <div className="space-y-5 py-2">
               {/* Info general */}
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 rounded-lg border bg-muted/30 p-4 text-sm">
-                <div className="space-y-0.5">
-                  <p className="text-xs text-muted-foreground uppercase tracking-wide">Fecha</p>
-                  <p className="font-medium">{cotizacionDetalle?.fecha || "—"}</p>
+              <div className="rounded-lg border bg-muted/30 divide-y text-sm">
+                <div className="flex items-center justify-between px-4 py-2.5">
+                  <span className="text-xs text-muted-foreground uppercase tracking-wide">Fecha</span>
+                  <span className="font-medium">{cotizacionDetalle?.fecha || "—"}</span>
                 </div>
-                <div className="space-y-0.5">
-                  <p className="text-xs text-muted-foreground uppercase tracking-wide">Evento</p>
-                  <p className="font-medium">{datosCotizacionDetalle.evento || "—"}</p>
+                <div className="flex items-center justify-between px-4 py-2.5">
+                  <span className="text-xs text-muted-foreground uppercase tracking-wide">Evento</span>
+                  <span className="font-medium">{datosCotizacionDetalle.evento || "—"}</span>
                 </div>
-                <div className="space-y-0.5">
-                  <p className="text-xs text-muted-foreground uppercase tracking-wide">Total</p>
-                  <p className="font-semibold text-primary">{formatCurrency(cotizacionDetalle?.montoTotal ?? 0)}</p>
+                <div className="flex items-center justify-between px-4 py-2.5">
+                  <span className="text-xs text-muted-foreground uppercase tracking-wide">Lugar</span>
+                  <span className="font-medium">{datosCotizacionDetalle.lugar || "—"}</span>
                 </div>
                 {datosCotizacionDetalle.descuento > 0 && (
-                  <div className="space-y-0.5">
-                    <p className="text-xs text-muted-foreground uppercase tracking-wide">Descuento</p>
-                    <p className="font-medium">{datosCotizacionDetalle.descuento}%</p>
+                  <div className="flex items-center justify-between px-4 py-2.5">
+                    <span className="text-xs text-muted-foreground uppercase tracking-wide">Descuento</span>
+                    <span className="font-medium">{datosCotizacionDetalle.descuento}%</span>
                   </div>
                 )}
+                <div className="flex items-center justify-between px-4 py-2.5">
+                  <span className="text-xs text-muted-foreground uppercase tracking-wide">Total</span>
+                  <span className="font-semibold text-primary">{formatCurrency(cotizacionDetalle?.montoTotal ?? 0)}</span>
+                </div>
               </div>
 
               {/* Productos agrupados por servicio */}

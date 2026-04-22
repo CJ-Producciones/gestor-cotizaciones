@@ -209,7 +209,7 @@ export const obtenerCotizacionDetalle = async (
   }
 
   const { data: consideraciones, error: errorConsideraciones } = await supabase
-    .from("cotizacion_consideraciones")
+    .from("cotizacion_notas")
     .select("*")
     .eq("cotizacion_id", cotizacionId)
     .order("orden", { ascending: true });
@@ -299,7 +299,7 @@ export const crearCotizacion = async (
     }));
 
     const { error: errorConsideraciones } = await supabase
-      .from("cotizacion_consideraciones")
+      .from("cotizacion_notas")
       .insert(consideracionesDB);
 
     if (errorConsideraciones) {
@@ -334,7 +334,7 @@ export class CotizacionesService {
       .select(`
         *,
         cuerpo:cotizacion_cuerpo (*),
-        consideraciones:cotizacion_consideraciones (*)
+        consideraciones:cotizacion_notas (*)
       `)
       .eq('id', id)
       .single();
@@ -380,7 +380,7 @@ export class CotizacionesService {
   static async eliminar(id: number): Promise<boolean> {
     // Primero eliminar consideraciones
     const { error: errorConsideraciones } = await supabase
-      .from('cotizacion_consideraciones')
+      .from('cotizacion_notas')
       .delete()
       .eq('cotizacion_id', id);
 
