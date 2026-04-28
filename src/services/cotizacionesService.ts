@@ -73,12 +73,12 @@ const normalizeEstado = (value: unknown): EstadoCotizacion => {
 
 const formatFecha = (value: unknown): string => {
   if (!value) return "";
-  if (typeof value === "string" && /^\d{2}\/\d{2}\/\d{4}$/.test(value)) {
-    return value;
-  }
   const date = new Date(String(value));
   if (Number.isNaN(date.getTime())) return String(value);
-  return date.toLocaleDateString("es-CO");
+  const dia = date.getDate();
+  const mes = date.toLocaleDateString("es-CO", { month: "long" });
+  const anio = date.getFullYear();
+  return `${dia} de ${mes} del ${anio}`;
 };
 
 const generateId = (): string => {
@@ -123,6 +123,8 @@ const toAppFormat = (cotizacion: CotizacionDB): Cotizacion => {
     id: String(idBase),
     numero: cotizacion.numero ?? cotizacion.codigo ?? generateNumero(cotizacion.id),
     cliente: cotizacion.cliente ?? cotizacion.nombre_cliente ?? "Sin cliente",
+    evento: cotizacion.evento ?? "",
+    lugar: cotizacion.lugar ?? "",
     fecha: formatFecha(cotizacion.created_at ?? ""),
     horaCreacion: formatHora(cotizacion.created_at),
     montoTotal: toNumber(cotizacion.monto_total ?? cotizacion.montoTotal ?? cotizacion.total ?? cotizacion.monto ?? 0),

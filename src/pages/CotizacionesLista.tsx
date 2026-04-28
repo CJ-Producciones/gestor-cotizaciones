@@ -40,6 +40,7 @@ import {
   ChevronRight,
   Copy,
   ArrowLeft,
+  Search,
 } from "lucide-react";
 import { roles } from "@/utils/const";
 
@@ -52,6 +53,7 @@ const CotizacionesLista = () => {
   const [clienteFilter, setClienteFilter] = useState<string>("todos");
   const [fechaDesde, setFechaDesde] = useState<string>("");
   const [fechaHasta, setFechaHasta] = useState<string>("");
+  const [busqueda, setBusqueda] = useState<string>("");
   const [currentPage, setCurrentPage] = useState(1);
   const [dialogEliminarAbierto, setDialogEliminarAbierto] = useState(false);
   const [cotizacionAEliminar, setCotizacionAEliminar] = useState<Cotizacion | null>(null);
@@ -97,11 +99,20 @@ const CotizacionesLista = () => {
 
   const parseFechaCotizacion = (fechaStr: string): Date | null => {
     if (!fechaStr) return null;
-    const parts = fechaStr.split(/[/-]/);
-    if (parts.length !== 3) return null;
-    const [day, month, year] = parts.map(Number);
-    if (isNaN(day) || isNaN(month) || isNaN(year)) return null;
-    return new Date(year, month - 1, day);
+    const meses: Record<string, number> = {
+      enero: 0, febrero: 1, marzo: 2, abril: 3, mayo: 4, junio: 5,
+      julio: 6, agosto: 7, septiembre: 8, octubre: 9, noviembre: 10, diciembre: 11,
+    };
+    const match = fechaStr.match(/^(\d+)\s+de\s+(\w+)\s+del?\s+(\d{4})$/i);
+    if (match) {
+      const dia = parseInt(match[1]);
+      const mes = meses[match[2].toLowerCase()];
+      const anio = parseInt(match[3]);
+      if (!isNaN(dia) && mes !== undefined && !isNaN(anio)) {
+        return new Date(anio, mes, dia);
+      }
+    }
+    return null;
   };
 
   const parseFechaInput = (fechaStr: string): Date | null => {
@@ -114,6 +125,8 @@ const CotizacionesLista = () => {
   };
 
   const filteredData = useMemo(() => {
+    const termino = busqueda.toLowerCase().trim();
+
     return cotizaciones.filter((cot) => {
       if (clienteFilter !== "todos" && cot.cliente !== clienteFilter) return false;
 
@@ -132,13 +145,21 @@ const CotizacionesLista = () => {
         }
       }
 
+      if (termino) {
+        const coincide =
+          cot.cliente?.toLowerCase().includes(termino) ||
+          cot.evento?.toLowerCase().includes(termino) ||
+          cot.lugar?.toLowerCase().includes(termino);
+        if (!coincide) return false;
+      }
+
       return true;
     });
-  }, [cotizaciones, clienteFilter, fechaDesde, fechaHasta]);
+  }, [cotizaciones, clienteFilter, fechaDesde, fechaHasta, busqueda]);
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [clienteFilter, fechaDesde, fechaHasta]);
+  }, [clienteFilter, fechaDesde, fechaHasta, busqueda]);
 
   const totalPages = Math.max(1, Math.ceil(filteredData.length / itemsPerPage));
 
@@ -159,13 +180,15 @@ const CotizacionesLista = () => {
     setClienteFilter("todos");
     setFechaDesde("");
     setFechaHasta("");
+    setBusqueda("");
     setCurrentPage(1);
   };
 
   const hayFiltrosActivos =
     clienteFilter !== "todos" ||
     !!fechaDesde ||
-    !!fechaHasta;
+    !!fechaHasta ||
+    !!busqueda;
 
   const handleSeleccionarCotizacion = async (cotizacion: Cotizacion) => {
     setCotizacionDetalle(cotizacion);
@@ -324,6 +347,21 @@ const CotizacionesLista = () => {
               )}
             </div>
           </div>
+
+          {/* Buscador por palabras clave */}
+          <div className="space-y-1.5">
+            <label className="text-xs text-muted-foreground">Buscar por cliente, evento o lugar</label>
+            <div className="relative">
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
+              <Input
+                type="text"
+                placeholder="Ej: Laura López, Boda Orquideograma, Jardín Botánico…"
+                value={busqueda}
+                onChange={(e) => setBusqueda(e.target.value)}
+                className="h-9 pl-8"
+              />
+            </div>
+          </div>
         </div>
 
         {/* ── Main content ────────────────────────────────────────── */}
@@ -374,11 +412,14 @@ const CotizacionesLista = () => {
               <Table className="min-w-[640px]">
                 <TableHeader>
                   <TableRow className="hover:bg-transparent border-b">
-                    <TableHead className="w-[140px] pl-4 text-xs uppercase tracking-wider text-muted-foreground font-medium">
-                      N° Cotización
+                    <TableHead className="text-xs uppercase tracking-wider text-muted-foreground font-medium pl-4">
+                      Cliente
                     </TableHead>
                     <TableHead className="text-xs uppercase tracking-wider text-muted-foreground font-medium">
-                      Cliente
+                      Evento
+                    </TableHead>
+                    <TableHead className="text-xs uppercase tracking-wider text-muted-foreground font-medium">
+                      Lugar
                     </TableHead>
                     <TableHead className="text-xs uppercase tracking-wider text-muted-foreground font-medium">
                       Fecha
@@ -396,7 +437,7 @@ const CotizacionesLista = () => {
                   {paginatedData.length === 0 ? (
                     <TableRow>
                       <TableCell
-                        colSpan={esAdmin ? 5 : 4}
+                        colSpan={esAdmin ? 6 : 5}
                         className="h-32 text-center text-sm text-muted-foreground"
                       >
                         Ninguna cotización coincide con los filtros aplicados
@@ -420,19 +461,24 @@ const CotizacionesLista = () => {
                           animationFillMode: "forwards",
                         }}
                       >
-                        {/* Left accent bar */}
-                        <TableCell className="pl-0 pr-4 w-[140px]">
+                        <TableCell className="pl-0 pr-4">
                           <div className="flex items-center gap-3">
                             <div className="h-8 w-1 rounded-full shrink-0 bg-primary transition-all duration-200 group-hover:h-10" />
-                            <span className="font-mono text-sm font-semibold text-primary">
-                              {cotizacion.numero}
+                            <span className="text-sm font-medium text-foreground">
+                              {cotizacion.cliente}
                             </span>
                           </div>
                         </TableCell>
 
                         <TableCell>
-                          <span className="text-sm font-medium text-foreground">
-                            {cotizacion.cliente}
+                          <span className="text-sm text-foreground">
+                            {cotizacion.evento || <span className="text-muted-foreground/50">—</span>}
+                          </span>
+                        </TableCell>
+
+                        <TableCell>
+                          <span className="text-sm text-muted-foreground">
+                            {cotizacion.lugar || <span className="text-muted-foreground/50">—</span>}
                           </span>
                         </TableCell>
 

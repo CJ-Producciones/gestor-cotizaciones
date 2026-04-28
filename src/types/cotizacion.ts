@@ -4,6 +4,8 @@ export interface Cotizacion {
   id: string;
   numero: string;
   cliente: string;
+  evento: string;
+  lugar: string;
   fecha: string;
   horaCreacion: string;
   montoTotal: number;
