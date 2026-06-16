@@ -17,22 +17,18 @@ const redirectToLogin = () => {
 };
 
 const setSessionExpiry = () => {
-  sessionStorage.setItem(SESSION_EXPIRES_KEY, String(Date.now() + SESSION_MAX_AGE_MS));
-};
-
-const ensureSessionExpiry = () => {
-  if (!sessionStorage.getItem(SESSION_EXPIRES_KEY)) {
-    setSessionExpiry();
-  }
+  localStorage.setItem(SESSION_EXPIRES_KEY, String(Date.now() + SESSION_MAX_AGE_MS));
 };
 
 const clearSessionExpiry = () => {
-  sessionStorage.removeItem(SESSION_EXPIRES_KEY);
+  localStorage.removeItem(SESSION_EXPIRES_KEY);
 };
 
+// Expiración absoluta: si existe una sesión de Supabase pero no hay marca,
+// se considera expirada (fail-closed) para forzar un nuevo login.
 const isSessionExpired = (): boolean => {
-  const raw = sessionStorage.getItem(SESSION_EXPIRES_KEY);
-  if (!raw) return false;
+  const raw = localStorage.getItem(SESSION_EXPIRES_KEY);
+  if (!raw) return true;
   return Date.now() >= Number(raw);
 };
 interface User {
@@ -95,37 +91,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     (async () => {
       setIsLoading(true);
 
+      const { data, error } = await getSession();
+
+      if (error || !data.session) {
+        setUser(null);
+        setIsLoading(false);
+        return;
+      }
+
+      // Hay sesión de Supabase: validar la expiración absoluta antes de aceptarla.
       if (isSessionExpired()) {
         await handleSessionExpired();
         setIsLoading(false);
         return;
       }
 
-      const { data, error } = await getSession();
+      const sessionUser = data.session.user;
+      const role = await fetchRole();
+      const userData = {
+        token: data.session.access_token,
+        email: sessionUser.email ?? "",
+        name: sessionUser.user_metadata?.name ?? sessionUser.user_metadata?.full_name ?? "",
+        role,
+      };
 
-      if (error) {
-        setUser(null);
-        setIsLoading(false);
-        return;
-      }
-
-      if (data.session) {
-        ensureSessionExpiry();
-        const sessionUser = data.session.user;
-        const role = await fetchRole();
-        const userData = {
-          token: data.session.access_token,
-          email: sessionUser.email ?? "",
-          name: sessionUser.user_metadata?.name ?? sessionUser.user_metadata?.full_name ?? "",
-          role,
-        };
-
-        setUser(userData);
-        setIsLoading(false);
-        return;
-      }
-
-      setUser(null);
+      setUser(userData);
       setIsLoading(false);
     })();
   }, [handleSessionExpired]);
@@ -149,12 +139,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return;
       }
 
-      if (isSessionExpired()) {
+      if (!session) return;
+
+      if (event === "SIGNED_IN") {
+        // Login real (password, OAuth, magic link): arranca el contador absoluto.
+        setSessionExpiry();
+      } else if (isSessionExpired()) {
+        // Sesión previa (INITIAL_SESSION / TOKEN_REFRESHED) que ya superó las 8h.
         await handleSessionExpired();
         return;
       }
-
-      if (!session) return;
 
       if (event === "TOKEN_REFRESHED") {
         setUser((prev) => {
@@ -164,12 +158,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return;
       }
 
-      if (event === "SIGNED_IN") {
-        setSessionExpiry();
-      }
-
       if (event === "SIGNED_IN" || event === "INITIAL_SESSION") {
-        ensureSessionExpiry();
         const sessionUser = session.user;
         const fetchedRole = await fetchRole();
 
@@ -197,8 +186,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const { data, error } = await signIn(email, password);
 
     if (error) return false;
-
-    console.log(data);
 
     const role = await fetchRole();
     const userData = {
