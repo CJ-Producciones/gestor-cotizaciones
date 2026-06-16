@@ -1,5 +1,7 @@
 const CHUNK_SIZE = 3800;
 
+export const SESSION_MAX_AGE_SECONDS = 60 * 60 * 8;
+
 const getCookie = (rawKey: string): string | null => {
   if (typeof document === "undefined") return null;
   const name = `${encodeURIComponent(rawKey)}=`;
@@ -53,7 +55,7 @@ export const cookieStorage = {
 
     cookieStorage.removeItem(key);
 
-    const maxAgeSeconds = 60 * 60 * 24 * 7;
+    const maxAgeSeconds = SESSION_MAX_AGE_SECONDS;
 
     if (value.length <= CHUNK_SIZE) {
       setCookie(key, value, maxAgeSeconds);

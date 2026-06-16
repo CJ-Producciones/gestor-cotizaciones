@@ -1,9 +1,40 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from "react";
 import { signIn } from "../api/auth/singin";
 import { getSession } from "../api/auth/getSession";
 import { singout } from "../api/auth/singout";
 import { getRole } from "../api/auth/getRole";
 import { supabase } from "../api/conection";
+import { SESSION_MAX_AGE_SECONDS } from "../api/cookieStorage";
+
+const SESSION_EXPIRES_KEY = "auth_session_expires_at";
+const SESSION_MAX_AGE_MS = SESSION_MAX_AGE_SECONDS * 1000;
+const PUBLIC_PATHS = ["/login", "/reset-password", "/accept-invite"];
+
+const redirectToLogin = () => {
+  if (!PUBLIC_PATHS.includes(window.location.pathname)) {
+    window.location.replace("/login");
+  }
+};
+
+const setSessionExpiry = () => {
+  sessionStorage.setItem(SESSION_EXPIRES_KEY, String(Date.now() + SESSION_MAX_AGE_MS));
+};
+
+const ensureSessionExpiry = () => {
+  if (!sessionStorage.getItem(SESSION_EXPIRES_KEY)) {
+    setSessionExpiry();
+  }
+};
+
+const clearSessionExpiry = () => {
+  sessionStorage.removeItem(SESSION_EXPIRES_KEY);
+};
+
+const isSessionExpired = (): boolean => {
+  const raw = sessionStorage.getItem(SESSION_EXPIRES_KEY);
+  if (!raw) return false;
+  return Date.now() >= Number(raw);
+};
 interface User {
   token: string;
   email: string;
@@ -21,12 +52,6 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Credenciales de prueba
-const TEST_CREDENTIALS = {
-  email: "admin@cotizaciones.cl",
-  password: "admin123",
-  name: "Admin",
-};
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
@@ -53,14 +78,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const logout = async () => {
+    clearSessionExpiry();
     setUser(null);
     await withTimeout(singout(), 3000, { error: null });
   };
 
-  // Cargar sesión desde localStorage al montar
+  const handleSessionExpired = useCallback(async () => {
+    clearSessionExpiry();
+    setUser(null);
+    await withTimeout(singout(), 3000, { error: null });
+    redirectToLogin();
+  }, []);
+
+  // Cargar sesión al montar
   useEffect(() => {
     (async () => {
       setIsLoading(true);
+
+      if (isSessionExpired()) {
+        await handleSessionExpired();
+        setIsLoading(false);
+        return;
+      }
+
       const { data, error } = await getSession();
 
       if (error) {
@@ -70,6 +110,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       if (data.session) {
+        ensureSessionExpiry();
         const sessionUser = data.session.user;
         const role = await fetchRole();
         const userData = {
@@ -87,12 +128,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(null);
       setIsLoading(false);
     })();
-  }, []);
+  }, [handleSessionExpired]);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (isSessionExpired()) {
+        void handleSessionExpired();
+      }
+    }, 60_000);
+
+    return () => clearInterval(interval);
+  }, [handleSessionExpired]);
 
   useEffect(() => {
     const { data } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (event === "SIGNED_OUT") {
+        clearSessionExpiry();
         setUser(null);
+        redirectToLogin();
+        return;
+      }
+
+      if (isSessionExpired()) {
+        await handleSessionExpired();
         return;
       }
 
@@ -106,7 +164,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return;
       }
 
+      if (event === "SIGNED_IN") {
+        setSessionExpiry();
+      }
+
       if (event === "SIGNED_IN" || event === "INITIAL_SESSION") {
+        ensureSessionExpiry();
         const sessionUser = session.user;
         const fetchedRole = await fetchRole();
 
@@ -125,7 +188,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => {
       data.subscription.unsubscribe();
     };
-  }, []);
+  }, [handleSessionExpired]);
 
   const login = async (email: string, password: string): Promise<boolean> => {
     // Simular delay de API
@@ -145,6 +208,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       role,
     };
 
+    setSessionExpiry();
     setUser(userData);
     return true;
 
