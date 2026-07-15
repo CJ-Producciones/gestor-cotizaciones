@@ -2,25 +2,20 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { useLocation } from "react-router-dom";
 import {
   Plus,
-  Trash2,
   Download,
   Save,
   Loader2,
   RotateCcw,
   FileText,
   Package,
+  ChevronsUpDown,
+  Search,
+  Check,
 } from "lucide-react";
 import VistaPrevia from "@/components/VistaPrevia";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import {
   Dialog,
   DialogContent,
@@ -31,6 +26,15 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
 import { DatosCotizacion, Producto, ProductoServicio, Servicio } from "@/types/cotizacion";
 import { PlantillasService } from "@/services/plantillasService";
 import { crearCotizacion } from "@/services/cotizacionesService";
@@ -39,6 +43,9 @@ import { obtenerProductos } from "@/services/productosService";
 import { WordExportService } from "@/services/wordExportService";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
+
+const normalizarTexto = (texto: string) =>
+  texto.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
 
 const NuevaCotizacion = () => {
   const location = useLocation();
@@ -93,6 +100,8 @@ const NuevaCotizacion = () => {
   }, []);
 
   const [servicioSeleccionado, setServicioSeleccionado] = useState<string>("");
+  const [buscadorServicioAbierto, setBuscadorServicioAbierto] = useState(false);
+  const [buscadorAbierto, setBuscadorAbierto] = useState(false);
   const [dialogPlantillaAbierto, setDialogPlantillaAbierto] = useState(false);
   const [nombrePlantilla, setNombrePlantilla] = useState("");
   const [descripcionPlantilla, setDescripcionPlantilla] = useState("");
@@ -519,36 +528,83 @@ const NuevaCotizacion = () => {
               {/* Service selector */}
               <div className="space-y-1.5">
                 <label className="text-xs text-muted-foreground">Servicio</label>
-                <Select value={servicioSeleccionado} onValueChange={setServicioSeleccionado}>
-                  <SelectTrigger className="h-9">
-                    <SelectValue
-                      placeholder={
-                        cargandoServicios ? "Cargando servicios…" : "Seleccioná un servicio"
+                <Popover open={buscadorServicioAbierto} onOpenChange={setBuscadorServicioAbierto}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      role="combobox"
+                      aria-expanded={buscadorServicioAbierto}
+                      className={`h-9 w-full justify-between font-normal ${
+                        servicioSeleccionado ? "text-foreground" : "text-muted-foreground"
+                      }`}
+                      disabled={cargandoServicios}
+                    >
+                      <span className="inline-flex items-center gap-2 min-w-0">
+                        {cargandoServicios ? (
+                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        ) : (
+                          <Search className="h-3.5 w-3.5 shrink-0" />
+                        )}
+                        <span className="truncate">
+                          {cargandoServicios
+                            ? "Cargando servicios…"
+                            : servicios.find((s) => String(s.id) === servicioSeleccionado)
+                                ?.nombre || "Buscar un servicio…"}
+                        </span>
+                      </span>
+                      <ChevronsUpDown className="h-3.5 w-3.5 shrink-0 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent
+                    className="w-[--radix-popover-trigger-width] p-0"
+                    align="start"
+                  >
+                    <Command
+                      filter={(value, search) =>
+                        normalizarTexto(value).includes(normalizarTexto(search)) ? 1 : 0
                       }
-                    />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {servicios.length === 0 && !cargandoServicios ? (
-                      <SelectItem value="sin-servicios" disabled>
-                        No hay servicios disponibles
-                      </SelectItem>
-                    ) : (
-                      servicios.map((s) => (
-                        <SelectItem key={s.id} value={String(s.id)}>
-                          {s.nombre || "Servicio sin nombre"}
-                        </SelectItem>
-                      ))
-                    )}
-                  </SelectContent>
-                </Select>
+                    >
+                      <CommandInput placeholder="Buscar por palabras clave…" />
+                      <CommandList>
+                        <CommandEmpty>
+                          {servicios.length === 0
+                            ? "No hay servicios disponibles"
+                            : "No se encontraron servicios"}
+                        </CommandEmpty>
+                        <CommandGroup>
+                          {servicios.map((s) => (
+                            <CommandItem
+                              key={s.id}
+                              value={`${s.nombre || "Servicio sin nombre"} ${s.id}`}
+                              onSelect={() => {
+                                setServicioSeleccionado(String(s.id));
+                                setBuscadorServicioAbierto(false);
+                              }}
+                              className="gap-2 py-2.5"
+                            >
+                              <Check
+                                className={`h-3.5 w-3.5 shrink-0 ${
+                                  String(s.id) === servicioSeleccionado
+                                    ? "opacity-100"
+                                    : "opacity-0"
+                                }`}
+                              />
+                              <span className="text-sm font-medium text-foreground truncate">
+                                {s.nombre || "Servicio sin nombre"}
+                              </span>
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
               </div>
 
-              {/* Available products table */}
-              <div className="rounded-lg border border-border overflow-hidden">
-                <div className="flex items-center justify-between px-4 py-2.5 border-b bg-muted/30">
-                  <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                    Productos disponibles
-                  </span>
+              {/* Product search combobox */}
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs text-muted-foreground">Productos disponibles</label>
                   <Button
                     variant="ghost"
                     size="sm"
@@ -560,165 +616,99 @@ const NuevaCotizacion = () => {
                     Agregar todos
                   </Button>
                 </div>
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm min-w-[380px]">
-                    <tbody>
-                      {cargandoProductos ? (
-                        <tr>
-                          <td className="px-4 py-6 text-center" colSpan={3}>
-                            <span className="inline-flex items-center gap-2 text-xs text-muted-foreground">
-                              <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                              Cargando productos…
-                            </span>
-                          </td>
-                        </tr>
-                      ) : productosServicio.length === 0 ? (
-                        <tr>
-                          <td className="px-4 py-6 text-center text-xs text-muted-foreground" colSpan={3}>
-                            {servicioSeleccionado
-                              ? "Este servicio no tiene productos"
-                              : "Seleccioná un servicio para ver sus productos"}
-                          </td>
-                        </tr>
-                      ) : (
-                        productosServicio.map((producto, index) => {
-                          const yaAgregado = datos.productos.some(
-                            (p) => p.productoId === producto.id
-                          );
-                          return (
-                            <tr
-                              key={producto.id}
-                              className={`group border-t border-border transition-colors duration-150 ${
-                                yaAgregado ? "opacity-40" : "hover:bg-muted/40"
-                              }`}
-                              style={{
-                                animationDelay: `${index * 30}ms`,
-                              }}
-                            >
-                              <td className="px-4 py-2.5">
-                                <span className="text-sm font-medium text-foreground block">
-                                  {producto.nombre || "Producto sin nombre"}
-                                </span>
-                                {producto.descripcion && (
-                                  <span className="text-xs text-muted-foreground">
-                                    {producto.descripcion}
+                <Popover open={buscadorAbierto} onOpenChange={setBuscadorAbierto}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      role="combobox"
+                      aria-expanded={buscadorAbierto}
+                      className="h-9 w-full justify-between font-normal text-muted-foreground"
+                      disabled={!servicioSeleccionado || cargandoProductos}
+                    >
+                      <span className="inline-flex items-center gap-2">
+                        {cargandoProductos ? (
+                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        ) : (
+                          <Search className="h-3.5 w-3.5" />
+                        )}
+                        {cargandoProductos
+                          ? "Cargando productos…"
+                          : servicioSeleccionado
+                            ? "Buscar y agregar producto…"
+                            : "Seleccioná un servicio primero"}
+                      </span>
+                      <ChevronsUpDown className="h-3.5 w-3.5 shrink-0 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent
+                    className="w-[--radix-popover-trigger-width] p-0"
+                    align="start"
+                  >
+                    <Command
+                      filter={(value, search) =>
+                        normalizarTexto(value).includes(normalizarTexto(search)) ? 1 : 0
+                      }
+                    >
+                      <CommandInput placeholder="Buscar por palabras clave…" />
+                      <CommandList>
+                        <CommandEmpty>
+                          {productosServicio.length === 0
+                            ? "Este servicio no tiene productos"
+                            : "No se encontraron productos"}
+                        </CommandEmpty>
+                        <CommandGroup>
+                          {productosServicio.map((producto) => {
+                            const yaAgregado = datos.productos.some(
+                              (p) => p.productoId === producto.id
+                            );
+                            return (
+                              <CommandItem
+                                key={producto.id}
+                                value={`${producto.nombre || "Producto sin nombre"} ${producto.id}`}
+                                disabled={yaAgregado}
+                                onSelect={() => {
+                                  handleAgregarProducto(producto);
+                                  setBuscadorAbierto(false);
+                                }}
+                                className="justify-between gap-3 py-2.5"
+                              >
+                                <span className="min-w-0">
+                                  <span className="text-sm font-medium text-foreground block truncate">
+                                    {producto.nombre || "Producto sin nombre"}
                                   </span>
-                                )}
-                              </td>
-                              <td className="px-4 py-2.5 text-right whitespace-nowrap">
-                                <span className="text-sm tabular-nums font-medium text-foreground">
+                                  {producto.descripcion && (
+                                    <span className="text-xs text-muted-foreground block truncate">
+                                      {producto.descripcion}
+                                    </span>
+                                  )}
+                                </span>
+                                <span className="text-sm tabular-nums font-medium text-foreground whitespace-nowrap">
                                   {formatCurrency(producto.precio ?? 0)}
                                 </span>
-                              </td>
-                              <td className="px-3 py-2.5 text-right w-20">
-                                {!yaAgregado && (
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    className="h-7 px-2 text-xs text-primary hover:text-primary hover:bg-primary/10"
-                                    onClick={() => handleAgregarProducto(producto)}
-                                  >
-                                    <Plus className="h-3 w-3 mr-1" />
-                                    Agregar
-                                  </Button>
-                                )}
-                              </td>
-                            </tr>
-                          );
-                        })
-                      )}
-                    </tbody>
-                  </table>
-                </div>
+                              </CommandItem>
+                            );
+                          })}
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
               </div>
 
               {/* Added products table */}
-              {datos.productos.length > 0 && (
-                <div className="rounded-lg border border-border overflow-hidden">
-                  <div className="flex items-center justify-between px-4 py-2.5 border-b bg-muted/30">
-                    <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                      Productos en la cotización
-                    </span>
-                    <span className="text-xs font-semibold text-foreground tabular-nums">
-                      {datos.productos.length}{" "}
-                      <span className="font-normal text-muted-foreground">
-                        {datos.productos.length === 1 ? "ítem" : "ítems"}
-                      </span>
-                    </span>
-                  </div>
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-sm min-w-[380px]">
-                      <tbody>
-                        {datos.productos.map((producto) => (
-                          <tr
-                            key={producto.id}
-                            className="group border-t border-border hover:bg-muted/40 transition-colors duration-150"
-                          >
-                            <td className="px-4 py-2.5">
-                              <span className="text-sm text-foreground">
-                                {producto.descripcion}
-                              </span>
-                            </td>
-                            <td className="px-3 py-2.5 w-24">
-                              <Input
-                                type="number"
-                                min="1"
-                                value={producto.cantidad}
-                                onChange={(e) =>
-                                  handleCantidadChange(producto.id, Number(e.target.value))
-                                }
-                                className="w-16 h-7 text-center text-xs mx-auto"
-                              />
-                            </td>
-                            {producto.precioVariable ? (
-                              <td className="px-3 py-2.5 w-28">
-                                <Input
-                                  type="number"
-                                  min="0"
-                                  value={producto.precioUnitario || ""}
-                                  placeholder="Precio"
-                                  onChange={(e) =>
-                                    handlePrecioChange(producto.id, Math.max(0, Number(e.target.value)))
-                                  }
-                                  className="w-24 h-7 text-right text-xs mx-auto"
-                                />
-                              </td>
-                            ) : (
-                              <td className="px-4 py-2.5 text-right whitespace-nowrap">
-                                <span className="text-sm tabular-nums font-medium text-foreground">
-                                  {formatCurrency(producto.precioUnitario)}
-                                </span>
-                              </td>
-                            )}
-                            <td className="px-4 py-2.5 text-right whitespace-nowrap">
-                              <span className="text-sm tabular-nums font-medium text-foreground">
-                                {formatCurrency(producto.cantidad * producto.precioUnitario)}
-                              </span>
-                            </td>
-                            <td className="px-3 py-2.5 w-10">
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive"
-                                onClick={() => handleEliminarProducto(producto.id)}
-                              >
-                                <Trash2 className="h-3.5 w-3.5" />
-                              </Button>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              )}
             </div>
           </div>
         </div>
 
         {/* ── Right column: preview + actions ───────────────────── */}
         <div className="space-y-4">
-          <VistaPrevia ref={vistaPreviaRef} datos={datos} onPrecioChange={handlePrecioChange} />
+          <VistaPrevia
+            ref={vistaPreviaRef}
+            datos={datos}
+            onPrecioChange={handlePrecioChange}
+            onCantidadChange={handleCantidadChange}
+            onEliminarProducto={handleEliminarProducto}
+          />
 
           {/* Action buttons */}
           <div className="rounded-xl border bg-card p-4">

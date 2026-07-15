@@ -1,13 +1,17 @@
 import { forwardRef } from "react";
+import { Trash2 } from "lucide-react";
 import { DatosCotizacion } from "@/types/cotizacion";
 import logoCJ from "@/assets/LogoCJ.png";
 
 interface VistaPreviaProps {
   datos: DatosCotizacion;
   onPrecioChange?: (productoId: string, nuevoPrecio: number) => void;
+  onCantidadChange?: (productoId: string, nuevaCantidad: number) => void;
+  onEliminarProducto?: (productoId: string) => void;
 }
 
-const VistaPrevia = forwardRef<HTMLDivElement, VistaPreviaProps>(({ datos, onPrecioChange }, ref) => {
+const VistaPrevia = forwardRef<HTMLDivElement, VistaPreviaProps>(
+  ({ datos, onPrecioChange, onCantidadChange, onEliminarProducto }, ref) => {
   const subtotal = datos.productos.reduce(
     (acc, p) => acc + p.cantidad * p.precioUnitario,
     0
@@ -117,6 +121,7 @@ const VistaPrevia = forwardRef<HTMLDivElement, VistaPreviaProps>(({ datos, onPre
                         <th className="text-center p-2 font-medium w-12">Cant.</th>
                         <th className="text-right p-2 font-medium w-20">Precio</th>
                         <th className="text-right p-2 font-medium w-24">Total</th>
+                        {onEliminarProducto && <th className="p-2 w-8" aria-label="Eliminar" />}
                       </tr>
                     </thead>
                     <tbody>
@@ -125,7 +130,21 @@ const VistaPrevia = forwardRef<HTMLDivElement, VistaPreviaProps>(({ datos, onPre
                         return (
                           <tr key={producto.id} className="border-t border-border">
                             <td className="p-2">{producto.descripcion}</td>
-                            <td className="p-2 text-center">{producto.cantidad}</td>
+                            <td className="p-2 text-center">
+                              {onCantidadChange ? (
+                                <input
+                                  type="number"
+                                  min="1"
+                                  value={producto.cantidad}
+                                  onChange={(e) =>
+                                    onCantidadChange(producto.id, Math.max(1, Number(e.target.value)))
+                                  }
+                                  className="w-12 rounded border border-primary/40 bg-primary/5 px-1.5 py-0.5 text-center text-xs tabular-nums text-foreground outline-none focus:border-primary focus:ring-1 focus:ring-primary/30"
+                                />
+                              ) : (
+                                producto.cantidad
+                              )}
+                            </td>
                             <td className="p-2 text-right">
                               {esEditable ? (
                                 <input
@@ -145,6 +164,18 @@ const VistaPrevia = forwardRef<HTMLDivElement, VistaPreviaProps>(({ datos, onPre
                             <td className="p-2 text-right">
                               {formatCurrency(producto.cantidad * producto.precioUnitario)}
                             </td>
+                            {onEliminarProducto && (
+                              <td className="p-2 text-center">
+                                <button
+                                  type="button"
+                                  aria-label={`Eliminar ${producto.descripcion}`}
+                                  onClick={() => onEliminarProducto(producto.id)}
+                                  className="inline-flex h-6 w-6 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
+                                >
+                                  <Trash2 className="h-3.5 w-3.5" />
+                                </button>
+                              </td>
+                            )}
                           </tr>
                         );
                       })}
