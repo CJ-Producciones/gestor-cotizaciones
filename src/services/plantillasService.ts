@@ -5,6 +5,10 @@ import {
   PlantillaDB,
 } from '@/types/cotizacion';
 import { supabase } from '@/api/conection';
+import {
+  agruparProductosPorServicio,
+  ordenarPorPosicionPersistida,
+} from '@/utils/ordenCotizacion';
 
 /**
  * Genera un ID único para las tablas que usan varchar como PK
@@ -21,7 +25,8 @@ function toAppFormat(plantillaDB: PlantillaDB): PlantillaCotizacion {
   const productos: Producto[] = [];
 
   if (plantillaDB.servicios) {
-    for (const servicio of plantillaDB.servicios) {
+    const serviciosOrdenados = ordenarPorPosicionPersistida(plantillaDB.servicios);
+    for (const servicio of serviciosOrdenados) {
       if (servicio.productos) {
         for (const producto of servicio.productos) {
           productos.push({
@@ -33,7 +38,6 @@ function toAppFormat(plantillaDB: PlantillaDB): PlantillaCotizacion {
             servicioId: servicio.servicio_id ?? null,
             nombreServicio: servicio.nombre_servicio || 'Servicio',
             descripcionProducto: producto.descripcion_producto ?? null,
-            precioVariable: producto.precio_unitario === 0,
           });
         }
       }
@@ -169,27 +173,13 @@ export class PlantillasService {
 
     // 2. Agrupar productos por servicio para preservar la estructura
     if (datos.productos.length > 0) {
-      // Agrupar productos por servicioId/nombreServicio
-      const productosPorServicio = datos.productos.reduce((acc, producto) => {
-        const key = producto.servicioId?.toString() || producto.nombreServicio || 'Sin servicio';
-        const nombreServicio = producto.nombreServicio || 'Sin servicio';
-
-        if (!acc[key]) {
-          acc[key] = {
-            servicioId: producto.servicioId ?? null,
-            nombreServicio,
-            productos: [],
-          };
-        }
-        acc[key].productos.push(producto);
-        return acc;
-      }, {} as Record<string, { servicioId: number | null; nombreServicio: string; productos: Producto[] }>);
+      const productosPorServicio = agruparProductosPorServicio(datos.productos);
 
       const serviciosCreados: string[] = [];
       let orden = 1;
 
       // 3. Crear un plantilla_servicios por cada grupo
-      for (const grupo of Object.values(productosPorServicio)) {
+      for (const grupo of productosPorServicio) {
         const plantillaServicioId = generateId();
 
         const { error: errorServicio } = await supabase
@@ -198,8 +188,8 @@ export class PlantillasService {
             id: plantillaServicioId,
             plantilla_id: plantillaId,
             servicio_id: grupo.servicioId,
-            nombre_servicio: grupo.nombreServicio,
-            descripcion_servicio: `Productos de ${grupo.nombreServicio}`,
+            nombre_servicio: grupo.nombre,
+            descripcion_servicio: `Productos de ${grupo.nombre}`,
             orden: orden++,
           });
 

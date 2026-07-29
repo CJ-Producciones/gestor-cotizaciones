@@ -1,17 +1,32 @@
 import { forwardRef } from "react";
-import { Trash2 } from "lucide-react";
+import { ArrowDown, ArrowUp, Trash2 } from "lucide-react";
 import { DatosCotizacion } from "@/types/cotizacion";
 import logoCJ from "@/assets/LogoCJ.png";
+import {
+  DESPLAZAMIENTO_SERVICIO,
+  agruparProductosPorServicio,
+  type DesplazamientoServicio,
+} from "@/utils/ordenCotizacion";
 
 interface VistaPreviaProps {
   datos: DatosCotizacion;
   onPrecioChange?: (productoId: string, nuevoPrecio: number) => void;
   onCantidadChange?: (productoId: string, nuevaCantidad: number) => void;
   onEliminarProducto?: (productoId: string) => void;
+  onMoverServicio?: (claveServicio: string, desplazamiento: DesplazamientoServicio) => void;
 }
 
 const VistaPrevia = forwardRef<HTMLDivElement, VistaPreviaProps>(
-  ({ datos, onPrecioChange, onCantidadChange, onEliminarProducto }, ref) => {
+  (
+    {
+      datos,
+      onPrecioChange,
+      onCantidadChange,
+      onEliminarProducto,
+      onMoverServicio,
+    },
+    ref
+  ) => {
   const subtotal = datos.productos.reduce(
     (acc, p) => acc + p.cantidad * p.precioUnitario,
     0
@@ -42,15 +57,7 @@ const VistaPrevia = forwardRef<HTMLDivElement, VistaPreviaProps>(
     });
   };
 
-  // Agrupar productos por servicio
-  const productosPorServicio = datos.productos.reduce((acc, producto) => {
-    const nombreServicio = producto.nombreServicio || "Sin servicio";
-    if (!acc[nombreServicio]) {
-      acc[nombreServicio] = [];
-    }
-    acc[nombreServicio].push(producto);
-    return acc;
-  }, {} as Record<string, typeof datos.productos>);
+  const gruposServicios = agruparProductosPorServicio(datos.productos);
 
   return (
     <div ref={ref} className="bg-card rounded-lg border border-border p-6 shadow-sm">
@@ -105,11 +112,50 @@ const VistaPrevia = forwardRef<HTMLDivElement, VistaPreviaProps>(
             </div>
           ) : (
             <div className="space-y-4">
-              {Object.entries(productosPorServicio).map(([nombreServicio, productos]) => (
-                <div key={nombreServicio} className="border border-border rounded overflow-hidden">
+              {gruposServicios.map((grupo, indice) => (
+                <div key={grupo.clave} className="border border-border rounded overflow-hidden">
                   {/* Service Header */}
-                  <div className="bg-primary/10 px-3 py-2 border-b border-border">
-                    <h5 className="font-semibold text-foreground text-xs">{nombreServicio}</h5>
+                  <div className="flex min-h-9 items-center justify-between gap-3 border-b border-border bg-primary/10 px-3 py-1.5">
+                    <h5 className="min-w-0 truncate text-xs font-semibold text-foreground">
+                      {grupo.nombre}
+                    </h5>
+                    {onMoverServicio && gruposServicios.length > 1 && (
+                      <div className="flex shrink-0 items-center gap-1 print:hidden">
+                        <span className="mr-0.5 text-[10px] font-medium text-muted-foreground">
+                          Orden
+                        </span>
+                        <button
+                          type="button"
+                          aria-label={`Subir ${grupo.nombre}`}
+                          title={`Subir ${grupo.nombre}`}
+                          disabled={indice === 0}
+                          onClick={() =>
+                            onMoverServicio(
+                              grupo.clave,
+                              DESPLAZAMIENTO_SERVICIO.ARRIBA
+                            )
+                          }
+                          className="inline-flex h-6 w-6 items-center justify-center rounded border border-border/70 bg-background/70 text-muted-foreground transition-colors hover:border-primary/40 hover:bg-primary/10 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 disabled:pointer-events-none disabled:opacity-30"
+                        >
+                          <ArrowUp className="h-3.5 w-3.5" />
+                        </button>
+                        <button
+                          type="button"
+                          aria-label={`Bajar ${grupo.nombre}`}
+                          title={`Bajar ${grupo.nombre}`}
+                          disabled={indice === gruposServicios.length - 1}
+                          onClick={() =>
+                            onMoverServicio(
+                              grupo.clave,
+                              DESPLAZAMIENTO_SERVICIO.ABAJO
+                            )
+                          }
+                          className="inline-flex h-6 w-6 items-center justify-center rounded border border-border/70 bg-background/70 text-muted-foreground transition-colors hover:border-primary/40 hover:bg-primary/10 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 disabled:pointer-events-none disabled:opacity-30"
+                        >
+                          <ArrowDown className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                    )}
                   </div>
 
                   {/* Products Table */}
@@ -125,8 +171,7 @@ const VistaPrevia = forwardRef<HTMLDivElement, VistaPreviaProps>(
                       </tr>
                     </thead>
                     <tbody>
-                      {productos.map((producto) => {
-                        const esEditable = producto.precioVariable && onPrecioChange;
+                      {grupo.productos.map((producto) => {
                         return (
                           <tr key={producto.id} className="border-t border-border">
                             <td className="p-2">{producto.descripcion}</td>
@@ -146,11 +191,12 @@ const VistaPrevia = forwardRef<HTMLDivElement, VistaPreviaProps>(
                               )}
                             </td>
                             <td className="p-2 text-right">
-                              {esEditable ? (
+                              {onPrecioChange ? (
                                 <input
                                   type="number"
                                   min="0"
-                                  value={producto.precioUnitario || ""}
+                                  aria-label={`Precio de ${producto.descripcion}`}
+                                  value={producto.precioUnitario}
                                   placeholder="0"
                                   onChange={(e) =>
                                     onPrecioChange(producto.id, Math.max(0, Number(e.target.value)))

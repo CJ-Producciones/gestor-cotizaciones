@@ -42,6 +42,10 @@ import { obtenerServicios } from "@/services/serviciosService";
 import { obtenerProductos } from "@/services/productosService";
 import { WordExportService } from "@/services/wordExportService";
 import { useAuth } from "@/contexts/AuthContext";
+import {
+  moverServicio,
+  type DesplazamientoServicio,
+} from "@/utils/ordenCotizacion";
 import { toast } from "sonner";
 
 const normalizarTexto = (texto: string) =>
@@ -86,7 +90,6 @@ const NuevaCotizacion = () => {
         ...p,
         id: `${Date.now()}-${index}`,
         productoId,
-        precioVariable: p.precioVariable ?? p.precioUnitario === 0,
       };
     });
 
@@ -196,7 +199,6 @@ const NuevaCotizacion = () => {
         servicioId: producto.id_servicio,
         nombreServicio,
         descripcionProducto: producto.descripcion ?? null,
-        precioVariable: !producto.precio,
       };
 
       return { ...prev, productos: [...prev.productos, nuevoProducto] };
@@ -224,7 +226,6 @@ const NuevaCotizacion = () => {
           servicioId: p.id_servicio,
           nombreServicio: servicios.find((s) => s.id === p.id_servicio)?.nombre || "Servicio",
           descripcionProducto: p.descripcion ?? null,
-          precioVariable: !p.precio,
         }));
 
       if (nuevos.length === 0) return prev;
@@ -258,6 +259,16 @@ const NuevaCotizacion = () => {
         p.id === id ? { ...p, precioUnitario: precio } : p
       ),
     }));
+  };
+
+  const handleMoverServicio = (
+    claveServicio: string,
+    desplazamiento: DesplazamientoServicio
+  ) => {
+    setDatos((prev) => {
+      const productos = moverServicio(prev.productos, claveServicio, desplazamiento);
+      return productos === prev.productos ? prev : { ...prev, productos };
+    });
   };
 
   const handleGuardarCotizacion = async () => {
@@ -708,6 +719,7 @@ const NuevaCotizacion = () => {
             onPrecioChange={handlePrecioChange}
             onCantidadChange={handleCantidadChange}
             onEliminarProducto={handleEliminarProducto}
+            onMoverServicio={handleMoverServicio}
           />
 
           {/* Action buttons */}

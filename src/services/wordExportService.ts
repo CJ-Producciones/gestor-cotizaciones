@@ -374,6 +374,10 @@ export class WordExportService {
       "La cotización tiene una vigencia de 15 días.",
       "Los valores mencionados son antes de IVA.",
       "La propuesta presentada es confidencial, no se permite compartir dicha propuesta sin autorización.",
+      "La fecha del evento se reserva únicamente con un anticipo del 30 % del valor total cotizado, según lo acordado. Una vez recibido el anticipo, la fecha quedará bloqueada exclusivamente para su evento. El valor correspondiente al anticipo no es reembolsable en caso de cancelación o aplazamiento por parte del cliente.",
+      "esta cotización no incluye conexiones eléctricas diferentes a la de la producción de cocina, estación de café, bares entre otros. En caso de ser requeridos deben solicitarse con 30 días de antelación a la fecha del evento, para validar disponibilidad y esta tendrá un costo adicional de acuerdo a la complejidad del evento.",
+      "Para el cierre de la cotización se debe enviar toda la información correspondiente a los grupos musicales, dj y bandas en todos los formatos ceremonia, coctel y recepción principal.",
+      "Para cumplir con los tiempos de montaje y entrega del proyecto, es fundamental contar con el generador eléctrico que suministre energía a partir de las 8:00 am, tanto el día del montaje como el día del evento.",
     ];
 
     const lineasNotas = datos.notas
