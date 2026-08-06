@@ -215,7 +215,7 @@ const CotizacionesLista = () => {
   const handleCrearDesdeCotizacion = () => {
     if (!datosCotizacionDetalle) return;
     setDialogDetalleAbierto(false);
-    navigate("/nueva", { state: { plantilla: datosCotizacionDetalle } });
+    navigate("/nueva", { state: { cotizacion: datosCotizacionDetalle } });
   };
 
   const handleClickEliminar = (cotizacion: Cotizacion, e: React.MouseEvent) => {

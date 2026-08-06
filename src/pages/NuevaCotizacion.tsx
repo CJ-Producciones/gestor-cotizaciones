@@ -1,5 +1,5 @@
-import { useState, useEffect, useRef, useCallback } from "react";
-import { useLocation } from "react-router-dom";
+import { useState, useEffect, useRef } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import {
   Plus,
   Download,
@@ -43,6 +43,11 @@ import { obtenerProductos } from "@/services/productosService";
 import { WordExportService } from "@/services/wordExportService";
 import { useAuth } from "@/contexts/AuthContext";
 import {
+  ORIGEN_DATOS_COTIZACION,
+  RESULTADO_DESCARTE_BORRADOR,
+  useBorradorCotizacion,
+} from "@/hooks/useBorradorCotizacion";
+import {
   moverServicio,
   type DesplazamientoServicio,
 } from "@/utils/ordenCotizacion";
@@ -53,58 +58,50 @@ const normalizarTexto = (texto: string) =>
 
 const NuevaCotizacion = () => {
   const location = useLocation();
+  const navigate = useNavigate();
   const { user } = useAuth();
   const plantillaData = location.state?.plantilla as DatosCotizacion | undefined;
   const cotizacionData = location.state?.cotizacion as DatosCotizacion | undefined;
+  const datosEntrantes = cotizacionData
+    ? {
+        datos: cotizacionData,
+        origen: ORIGEN_DATOS_COTIZACION.COTIZACION,
+      }
+    : plantillaData
+      ? {
+          datos: plantillaData,
+          origen: ORIGEN_DATOS_COTIZACION.PLANTILLA,
+        }
+      : null;
   const vistaPreviaRef = useRef<HTMLDivElement>(null);
 
-  const [datos, setDatos] = useState<DatosCotizacion>({
-    cliente: "",
-    evento: "",
-    lugar: "",
-    notas: "",
-    descuento: 0,
-    iva: 19,
-    fecha: "",
-    nombreEncargado: "Carlos Jaramillo",
-    cargo: "Director general",
-    productos: [],
+  const {
+    datos,
+    setDatos,
+    ivaHabilitado,
+    setIvaHabilitado,
+    ivaGuardado,
+    setIvaGuardado,
+    servicioSeleccionado,
+    setServicioSeleccionado,
+    reemplazoPendiente,
+    origenAplicado,
+    errorPersistencia,
+    cambiandoUsuario,
+    setOrigenAplicado,
+    conservarBorrador,
+    reemplazarBorrador,
+    limpiarBorrador,
+    obtenerSnapshotBorrador,
+    descartarBorradorPersistido,
+  } = useBorradorCotizacion({
+    identificadorUsuario: user?.email,
+    datosEntrantes,
   });
 
-  const [ivaHabilitado, setIvaHabilitado] = useState(true);
-  const ivaGuardadoRef = useRef<number>(19);
-
-  useEffect(() => {
-    const dataBase = cotizacionData ?? plantillaData;
-    if (!dataBase) return;
-
-    const productos = dataBase.productos.map((p, index) => {
-      const productoId =
-        typeof p.productoId === "number"
-          ? p.productoId
-          : Number.isFinite(Number(p.id))
-            ? Number(p.id)
-            : null;
-
-      return {
-        ...p,
-        id: `${Date.now()}-${index}`,
-        productoId,
-      };
-    });
-
-    setDatos({ ...dataBase, productos });
-
-    if (cotizacionData) {
-      toast.success("Cotización cargada correctamente");
-    } else {
-      toast.success("Plantilla cargada correctamente");
-    }
-  }, []);
-
-  const [servicioSeleccionado, setServicioSeleccionado] = useState<string>("");
   const [buscadorServicioAbierto, setBuscadorServicioAbierto] = useState(false);
   const [buscadorAbierto, setBuscadorAbierto] = useState(false);
+  const [dialogLimpiarAbierto, setDialogLimpiarAbierto] = useState(false);
   const [dialogPlantillaAbierto, setDialogPlantillaAbierto] = useState(false);
   const [nombrePlantilla, setNombrePlantilla] = useState("");
   const [descripcionPlantilla, setDescripcionPlantilla] = useState("");
@@ -116,22 +113,48 @@ const NuevaCotizacion = () => {
   const [guardandoPlantilla, setGuardandoPlantilla] = useState(false);
   const [descargandoWord, setDescargandoWord] = useState(false);
 
+  useEffect(() => {
+    if (!origenAplicado) return;
+
+    navigate(location.pathname, { replace: true, state: null });
+    toast.success(
+      origenAplicado === ORIGEN_DATOS_COTIZACION.COTIZACION
+        ? "Cotización cargada correctamente"
+        : "Plantilla cargada correctamente"
+    );
+    setOrigenAplicado(null);
+  }, [location.pathname, navigate, origenAplicado, setOrigenAplicado]);
+
+  useEffect(() => {
+    if (errorPersistencia) {
+      toast.error("No se pudo conservar el borrador en este navegador");
+    }
+  }, [errorPersistencia]);
+
+  useEffect(() => {
+    if (!cambiandoUsuario) return;
+
+    setBuscadorServicioAbierto(false);
+    setBuscadorAbierto(false);
+    setDialogLimpiarAbierto(false);
+    setDialogPlantillaAbierto(false);
+    setNombrePlantilla("");
+    setDescripcionPlantilla("");
+  }, [cambiandoUsuario]);
+
   const handleInputChange = (field: keyof DatosCotizacion, value: string | number) => {
     setDatos((prev) => ({ ...prev, [field]: value }));
   };
 
-  const handleToggleIva = useCallback(
-    (habilitado: boolean) => {
-      if (!habilitado) {
-        ivaGuardadoRef.current = datos.iva ?? 19;
-        setDatos((prev) => ({ ...prev, iva: 0 }));
-      } else {
-        setDatos((prev) => ({ ...prev, iva: ivaGuardadoRef.current }));
-      }
-      setIvaHabilitado(habilitado);
-    },
-    [datos.iva]
-  );
+  const handleToggleIva = (habilitado: boolean) => {
+    if (!habilitado) {
+      setIvaGuardado(datos.iva ?? 19);
+      setDatos((prev) => ({ ...prev, iva: 0 }));
+    } else {
+      setDatos((prev) => ({ ...prev, iva: ivaGuardado }));
+    }
+    setIvaHabilitado(habilitado);
+  };
 
   useEffect(() => {
     let activo = true;
@@ -281,9 +304,18 @@ const NuevaCotizacion = () => {
       return;
     }
     try {
+      const snapshotBorrador = obtenerSnapshotBorrador();
       setGuardandoCotizacion(true);
       await crearCotizacion(datos, datos.productos);
+      const resultadoDescarte = descartarBorradorPersistido(snapshotBorrador);
       toast.success("Cotización guardada exitosamente");
+      if (resultadoDescarte === RESULTADO_DESCARTE_BORRADOR.MODIFICADO) {
+        toast.warning(
+          "Los cambios realizados durante el guardado continúan como borrador"
+        );
+      } else if (resultadoDescarte === RESULTADO_DESCARTE_BORRADOR.ERROR) {
+        toast.warning("La cotización se guardó, pero el borrador no pudo eliminarse");
+      }
     } catch (error) {
       const mensaje =
         error instanceof Error ? error.message : "No se pudo guardar la cotización";
@@ -343,23 +375,19 @@ const NuevaCotizacion = () => {
   };
 
   const handleLimpiarDatos = () => {
-    setDatos({
-      cliente: "",
-      evento: "",
-      lugar: "",
-      notas: "",
-      descuento: 0,
-      iva: 19,
-      fecha: "",
-      nombreEncargado: "Carlos Jaramillo",
-      cargo: "Director general",
-      productos: [],
-    });
-    setIvaHabilitado(true);
-    ivaGuardadoRef.current = 19;
-    setServicioSeleccionado("");
+    const borradorEliminado = limpiarBorrador();
     setProductosServicio([]);
-    toast.success("Datos limpiados correctamente");
+    setDialogLimpiarAbierto(false);
+    if (borradorEliminado) {
+      toast.success("Datos limpiados correctamente");
+    } else {
+      toast.error("Los datos se limpiaron, pero no se pudo eliminar el borrador guardado");
+    }
+  };
+
+  const handleConservarBorrador = () => {
+    conservarBorrador();
+    navigate(location.pathname, { replace: true, state: null });
   };
 
   const formatCurrency = (amount: number) => {
@@ -369,6 +397,15 @@ const NuevaCotizacion = () => {
       minimumFractionDigits: 0,
     }).format(amount);
   };
+
+  if (cambiandoUsuario) {
+    return (
+      <div className="flex min-h-[40vh] items-center justify-center gap-2 text-sm text-muted-foreground">
+        <Loader2 className="h-4 w-4 animate-spin" />
+        Cargando borrador…
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -386,7 +423,7 @@ const NuevaCotizacion = () => {
         <Button
           variant="outline"
           size="sm"
-          onClick={handleLimpiarDatos}
+          onClick={() => setDialogLimpiarAbierto(true)}
           className="shrink-0 gap-2 text-muted-foreground hover:text-foreground"
         >
           <RotateCcw className="h-3.5 w-3.5" />
@@ -763,6 +800,54 @@ const NuevaCotizacion = () => {
           </div>
         </div>
       </div>
+
+      {/* ── Clear quote confirmation dialog ───────────────────────── */}
+      <Dialog open={dialogLimpiarAbierto} onOpenChange={setDialogLimpiarAbierto}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>¿Quieres limpiar los datos?</DialogTitle>
+            <DialogDescription>
+              Esta acción eliminará la información y los productos de la cotización
+              actual.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDialogLimpiarAbierto(false)}>
+              Cancelar
+            </Button>
+            <Button variant="destructive" onClick={handleLimpiarDatos}>
+              Limpiar datos
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* ── Replace existing draft dialog ──────────────────────────── */}
+      <Dialog
+        open={reemplazoPendiente !== null}
+        onOpenChange={(abierto) => {
+          if (!abierto) handleConservarBorrador();
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>¿Reemplazar el borrador actual?</DialogTitle>
+            <DialogDescription>
+              Ya tenés una cotización en progreso. Si la reemplazás, sus datos se
+              sobrescribirán con la {reemplazoPendiente?.origen ===
+              ORIGEN_DATOS_COTIZACION.COTIZACION
+                ? "cotización seleccionada"
+                : "plantilla seleccionada"}.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={handleConservarBorrador}>
+              Conservar borrador
+            </Button>
+            <Button onClick={reemplazarBorrador}>Reemplazar</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* ── Save as template dialog ───────────────────────────────── */}
       <Dialog open={dialogPlantillaAbierto} onOpenChange={setDialogPlantillaAbierto}>
