@@ -65,7 +65,12 @@ export class WordExportService {
         year: "numeric",
       });
     }
-    return new Date(fecha).toLocaleDateString("es-CO", {
+    // Parsear la fecha manualmente para evitar problemas de zona horaria
+    // El formato del input date es YYYY-MM-DD
+    const [year, month, day] = fecha.split('-').map(Number);
+    const fechaLocal = new Date(year, month - 1, day);
+    
+    return fechaLocal.toLocaleDateString("es-CO", {
       day: "2-digit",
       month: "2-digit",
       year: "numeric",
@@ -165,7 +170,12 @@ export class WordExportService {
 
   private static crearSeccionIntroduccion(datos: DatosCotizacion): Paragraph[] {
     const fechaHoy = new Date();
-    const fechaEvento = datos.fecha ? new Date(datos.fecha) : null;
+    // Parsear la fecha manualmente para evitar problemas de zona horaria
+    let fechaEvento: Date | null = null;
+    if (datos.fecha) {
+      const [year, month, day] = datos.fecha.split('-').map(Number);
+      fechaEvento = new Date(year, month - 1, day);
+    }
     return [
       // Fecha actual
       new Paragraph({
